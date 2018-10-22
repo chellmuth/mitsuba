@@ -39,7 +39,21 @@ public:
     bool render(Scene *scene, RenderQueue *queue, const RenderJob *job,
             int sceneResID, int sensorResID, int samplerResID) {
 
-        ref<Sampler> sampler = new CJHSampler();
+        ref<CJHSampler> sampler = new CJHSampler();
+        std::vector<float> samples = {
+            // sensor
+            0.5f,
+            0.3f,
+
+            // direct
+            0.1f,
+            0.9f,
+
+            // bsdf
+            0.4f,
+            0.4f
+        };
+        sampler->setSamples(samples);
 
         ref<PathSampler> pathSampler = new PathSampler(
             PathSampler::EUnidirectional,

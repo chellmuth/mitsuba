@@ -11,6 +11,8 @@ public:
     CJHSampler(const Properties &props);
     CJHSampler(Stream *stream, InstanceManager *manager);
 
+    void setSamples(const std::vector<float> &samples);
+
     void serialize(Stream *stream, InstanceManager *manager) const;
     ref<Sampler> clone();
     std::string toString() const;
@@ -26,9 +28,12 @@ public:
 
 private:
     ref<Random> m_random;
+
+
+    std::vector<float> m_samples;
+    unsigned int m_sampleIndex;
 };
 
 MTS_NAMESPACE_END
 
 #endif /* __CJH_SAMPLER_H */
-
