@@ -19,6 +19,12 @@ public:
 
         m_config.bsdf1_1 = props.getFloat("bsdf1_1");
         m_config.bsdf1_2 = props.getFloat("bsdf1_2");
+
+        m_config.direct2_1 = props.getFloat("direct2_1");
+        m_config.direct2_2 = props.getFloat("direct2_2");
+
+        m_config.bsdf2_1 = props.getFloat("bsdf2_1");
+        m_config.bsdf2_2 = props.getFloat("bsdf2_2");
     }
 
     CJH(Stream *stream, InstanceManager *manager)
@@ -61,6 +67,14 @@ public:
             // bsdf
             m_config.bsdf1_1,
             m_config.bsdf1_2,
+
+            // direct
+            m_config.direct2_1,
+            m_config.direct2_2,
+
+            // bsdf
+            m_config.bsdf2_1,
+            m_config.bsdf2_2
         };
         sampler->setSamples(samples);
 
@@ -68,7 +82,7 @@ public:
             PathSampler::EUnidirectional,
             scene,
             sampler, sampler, sampler, // {emitter, sensor, direct} samplers
-            2, // maxDepth
+            3, // maxDepth
             9999, // russian roulette start depth
             false, // exclude direct illumination
             true // custom sample direct logic

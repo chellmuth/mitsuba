@@ -16,6 +16,12 @@ struct CJHConfiguration {
     Float bsdf1_1;
     Float bsdf1_2;
 
+    Float direct2_1;
+    Float direct2_2;
+
+    Float bsdf2_1;
+    Float bsdf2_2;
+
     inline CJHConfiguration() { }
 
     inline CJHConfiguration(Stream *stream) {}
