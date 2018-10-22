@@ -13,8 +13,11 @@ public:
 
     void serialize(Stream *stream, InstanceManager *manager) const;
     ref<Sampler> clone();
-    void generate(const Point2i &pos);
     std::string toString() const;
+
+    void generate(const Point2i &pos) { Log(EError, "generate(): Unsupported!"); }
+    void request1DArray(size_t size) { Log(EError, "request1DArray(): Unsupported!"); }
+    void request2DArray(size_t size) { Log(EError, "request2DArray(): Unsupported!"); }
 
     Float next1D();
     Point2 next2D();
