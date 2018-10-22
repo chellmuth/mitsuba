@@ -36,8 +36,8 @@ PathSampler::PathSampler(ETechnique technique, const Scene *scene, Sampler *sens
     if (technique == EUnidirectional) {
         /* Instantiate a volumetric path tracer */
         Properties props("path");
-        // props.setInteger("maxDepth", maxDepth);
-        // props.setInteger("rrDepth", rrDepth);
+        props.setInteger("maxDepth", maxDepth);
+        props.setInteger("rrDepth", rrDepth);
         m_integrator = static_cast<SamplingIntegrator *> (PluginManager::getInstance()->
             createObject(MTS_CLASS(SamplingIntegrator), props));
     }

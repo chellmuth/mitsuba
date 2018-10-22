@@ -26,10 +26,12 @@ ref<Sampler> CJHSampler::clone() {
 }
 
 Float CJHSampler::next1D() {
+    printf("Request 1D\n");
     return m_random->nextFloat();
 }
 
 Point2 CJHSampler::next2D() {
+    printf("Request 2D\n");
     Float value1 = m_random->nextFloat();
     Float value2 = m_random->nextFloat();
     return Point2(value1, value2);

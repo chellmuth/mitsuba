@@ -45,7 +45,7 @@ public:
             PathSampler::EUnidirectional,
             scene,
             sampler, sampler, sampler, // {emitter, sensor, direct} samplers
-            1, // maxDepth
+            3, // maxDepth
             9999, // russian roulette start depth
             false, // exclude direct illumination
             true // custom sample direct logic
