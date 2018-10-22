@@ -3,6 +3,8 @@
 
 #include "cjh.h"
 
+#include <mitsuba/bidir/pathsampler.h>
+
 MTS_NAMESPACE_BEGIN
 
 class CJH : public Integrator {
@@ -35,6 +37,25 @@ public:
 
     bool render(Scene *scene, RenderQueue *queue, const RenderJob *job,
             int sceneResID, int sensorResID, int samplerResID) {
+
+        ref<Sensor> sensor = scene->getSensor();
+        ref<Sampler> sampler = sensor->getSampler();
+
+        ref<PathSampler> pathSampler = new PathSampler(
+            PathSampler::EUnidirectional,
+            scene,
+            sampler, sampler, sampler, // {emitter, sensor, direct} samplers
+            1, // maxDepth
+            9999, // russian roulette start depth
+            false, // exclude direct illumination
+            true // custom sample direct logic
+        );
+
+        SplatList *current = new SplatList();
+        pathSampler->sampleSplats(Point2i(-1), *current);
+
+        std::cout << current->toString() << std::endl;
+
         printf("RENDERED EVERYTHING!!\n");
         return true;
     }

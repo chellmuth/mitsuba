@@ -6,8 +6,6 @@ plugins += env.SharedLibrary('path', ['path/path.cpp'])
 plugins += env.SharedLibrary('volpath', ['path/volpath.cpp'])
 plugins += env.SharedLibrary('volpath_simple', ['path/volpath_simple.cpp'])
 plugins += env.SharedLibrary('ptracer', ['ptracer/ptracer.cpp', 'ptracer/ptracer_proc.cpp'])
-plugins += env.SharedLibrary('cjh', ['cjh/cjh.cpp'])
-
 # Photon mapping-based techniques
 plugins += env.SharedLibrary('photonmapper', ['photonmapper/photonmapper.cpp', 'photonmapper/bre.cpp'])
 plugins += env.SharedLibrary('ppm', ['photonmapper/ppm.cpp'])
@@ -40,5 +38,7 @@ plugins += bidirEnv.SharedLibrary('mlt',
 plugins += bidirEnv.SharedLibrary('erpt',
         ['erpt/erpt.cpp', 'erpt/erpt_proc.cpp']
 )
+
+plugins += bidirEnv.SharedLibrary('cjh', ['cjh/cjh.cpp'])
 
 Export('plugins')
