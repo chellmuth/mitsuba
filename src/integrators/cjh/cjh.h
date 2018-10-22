@@ -7,6 +7,15 @@
 MTS_NAMESPACE_BEGIN
 
 struct CJHConfiguration {
+    Float x;
+    Float y;
+
+    Float direct1_1;
+    Float direct1_2;
+
+    Float bsdf1_1;
+    Float bsdf1_2;
+
     inline CJHConfiguration() { }
 
     inline CJHConfiguration(Stream *stream) {}

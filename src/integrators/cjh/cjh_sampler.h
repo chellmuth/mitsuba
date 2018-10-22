@@ -30,7 +30,7 @@ private:
     ref<Random> m_random;
 
 
-    std::vector<float> m_samples;
+    std::vector<Float> m_samples;
     unsigned int m_sampleIndex;
 };
 

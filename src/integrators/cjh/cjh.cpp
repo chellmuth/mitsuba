@@ -10,7 +10,16 @@ MTS_NAMESPACE_BEGIN
 
 class CJH : public Integrator {
 public:
-    CJH(const Properties &props) : Integrator(props) {}
+    CJH(const Properties &props) : Integrator(props) {
+        m_config.x = props.getFloat("x");
+        m_config.y = props.getFloat("y");
+
+        m_config.direct1_1 = props.getFloat("direct1_1");
+        m_config.direct1_2 = props.getFloat("direct1_2");
+
+        m_config.bsdf1_1 = props.getFloat("bsdf1_1");
+        m_config.bsdf1_2 = props.getFloat("bsdf1_2");
+    }
 
     CJH(Stream *stream, InstanceManager *manager)
      : Integrator(stream, manager) {
@@ -40,18 +49,18 @@ public:
             int sceneResID, int sensorResID, int samplerResID) {
 
         ref<CJHSampler> sampler = new CJHSampler();
-        std::vector<float> samples = {
+        std::vector<Float> samples = {
             // sensor
-            0.5f,
-            0.3f,
+            m_config.x,
+            m_config.y,
 
             // direct
-            0.1f,
-            0.9f,
+            m_config.direct1_1,
+            m_config.direct1_2,
 
             // bsdf
-            0.4f,
-            0.4f
+            m_config.bsdf1_1,
+            m_config.bsdf1_2,
         };
         sampler->setSamples(samples);
 
@@ -59,7 +68,7 @@ public:
             PathSampler::EUnidirectional,
             scene,
             sampler, sampler, sampler, // {emitter, sensor, direct} samplers
-            3, // maxDepth
+            2, // maxDepth
             9999, // russian roulette start depth
             false, // exclude direct illumination
             true // custom sample direct logic
