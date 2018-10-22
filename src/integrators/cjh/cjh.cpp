@@ -2,6 +2,7 @@
 #include <mitsuba/core/plugin.h>
 
 #include "cjh.h"
+#include "cjh_sampler.h"
 
 #include <mitsuba/bidir/pathsampler.h>
 
@@ -38,8 +39,7 @@ public:
     bool render(Scene *scene, RenderQueue *queue, const RenderJob *job,
             int sceneResID, int sensorResID, int samplerResID) {
 
-        ref<Sensor> sensor = scene->getSensor();
-        ref<Sampler> sampler = sensor->getSampler();
+        ref<Sampler> sampler = new CJHSampler();
 
         ref<PathSampler> pathSampler = new PathSampler(
             PathSampler::EUnidirectional,
