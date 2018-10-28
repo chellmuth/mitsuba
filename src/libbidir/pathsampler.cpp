@@ -276,8 +276,11 @@ void PathSampler::sampleSplats(const Point2i &offset, SplatList &list) {
                 Point2 apertureSample(0.5f);
                 Float timeSample = 0.5f;
 
-                if (sensor->needsApertureSample())
+                if (sensor->needsApertureSample()) {
                     apertureSample = m_sensorSampler->next2D();
+                } else {
+                    AssertEx(false, "Use a sensor that needs aperture sampling");
+                }
                 if (sensor->needsTimeSample())
                     timeSample = m_sensorSampler->next1D();
 

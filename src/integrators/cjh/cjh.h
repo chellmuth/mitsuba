@@ -10,6 +10,9 @@ struct CJHConfiguration {
     Float x;
     Float y;
 
+    Float u;
+    Float v;
+
     Float direct1_1;
     Float direct1_2;
 

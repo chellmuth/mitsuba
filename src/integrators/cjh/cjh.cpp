@@ -14,6 +14,9 @@ public:
         m_config.x = props.getFloat("x");
         m_config.y = props.getFloat("y");
 
+        m_config.u = props.getFloat("u");
+        m_config.v = props.getFloat("v");
+
         m_config.direct1_1 = props.getFloat("direct1_1");
         m_config.direct1_2 = props.getFloat("direct1_2");
 
@@ -54,13 +57,18 @@ public:
     bool render(Scene *scene, RenderQueue *queue, const RenderJob *job,
             int sceneResID, int sensorResID, int samplerResID) {
 
-        ref<CJHSampler> sampler = new CJHSampler();
-        std::vector<Float> samples = {
-            // sensor
+        ref<CJHSampler> sensorSampler = new CJHSampler("sensor");
+        ref<CJHSampler> emitterSampler = new CJHSampler("emitter");
+        ref<CJHSampler> directSampler = new CJHSampler("direct");
+
+        std::vector<Float> sensorSamples = {
+            m_config.u,
+            m_config.v,
+
             m_config.x,
             m_config.y,
 
-            // direct
+            // direct light
             m_config.direct1_1,
             m_config.direct1_2,
 
@@ -68,7 +76,7 @@ public:
             m_config.bsdf1_1,
             m_config.bsdf1_2,
 
-            // direct
+            // direct light
             m_config.direct2_1,
             m_config.direct2_2,
 
@@ -76,12 +84,18 @@ public:
             m_config.bsdf2_1,
             m_config.bsdf2_2
         };
-        sampler->setSamples(samples);
+
+        std::vector<Float> emitterSamples = {};
+        std::vector<Float> directSamples = {};
+
+        sensorSampler->setSamples(sensorSamples);
+        emitterSampler->setSamples(emitterSamples);
+        directSampler->setSamples(directSamples);
 
         ref<PathSampler> pathSampler = new PathSampler(
             PathSampler::EUnidirectional,
             scene,
-            sampler, sampler, sampler, // {emitter, sensor, direct} samplers
+            sensorSampler, emitterSampler, directSampler,
             3, // maxDepth
             9999, // russian roulette start depth
             false, // exclude direct illumination

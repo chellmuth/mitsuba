@@ -7,7 +7,7 @@ MTS_NAMESPACE_BEGIN
 
 class CJHSampler : public Sampler {
 public:
-    CJHSampler();
+    CJHSampler(const std::string &tag);
     CJHSampler(const Properties &props);
     CJHSampler(Stream *stream, InstanceManager *manager);
 
@@ -27,9 +27,7 @@ public:
     MTS_DECLARE_CLASS()
 
 private:
-    ref<Random> m_random;
-
-
+    std::string m_tag;
     std::vector<Float> m_samples;
     unsigned int m_sampleIndex;
 };

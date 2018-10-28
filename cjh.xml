@@ -4,6 +4,8 @@
     <integrator type="cjh">
       <default name="x" value="0.3" />
       <default name="y" value="0.4" />
+      <default name="u" value="0.1" />
+      <default name="v" value="0.41" />
       <default name="direct1_1" value="0.5" />
       <default name="direct1_2" value="0.55" />
       <default name="bsdf1_1" value="0.9" />
@@ -16,6 +18,9 @@
       <float name="x" value="$x" />
       <float name="y" value="$y" />
 
+      <float name="u" value="$u" />
+      <float name="v" value="$v" />
+
       <float name="direct1_1" value="$direct1_1" />
       <float name="direct1_2" value="$direct1_2" />
       <float name="bsdf1_1" value="$bsdf1_1" />
@@ -27,14 +32,15 @@
       <float name="bsdf2_2" value="$bsdf2_2" />
     </integrator>
 
-	<sensor type="perspective">
+	<sensor type="thinlens">
+        <float name="apertureRadius" value="0.005" />
 		<float name="fov" value="19.5"/>
 		<transform name="toWorld">
 			<matrix value="-1 0 0 0 0 1 0 1 0 0 -1 6.8 0 0 0 1"/>
 		</transform>
 
 		<sampler type="independent">
-			<integer name="sampleCount" value="64"/>
+			<integer name="sampleCount" value="1"/>
 		</sampler>
 
 		<film type="ldrfilm">
