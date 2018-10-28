@@ -8,7 +8,7 @@ from PIL import Image
 def run():
     cols = 500
     rows = 500
-    samples_per_coordinate = 20
+    samples_per_coordinate = 200
 
     args = []
     values = []
@@ -22,6 +22,7 @@ def run():
         for x in range(cols):
             for _ in range(samples_per_coordinate):
                 args = [
+                    ("-Dt=%f", r.random()),
                     ("-Du=%f", r.random()),
                     ("-Dv=%f", r.random()),
                     ("-Dx=%f", (float(x) / cols) + r.random() * x_delta),

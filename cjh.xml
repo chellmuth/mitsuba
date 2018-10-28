@@ -33,6 +33,9 @@
     </integrator>
 
 	<sensor type="thinlens">
+        <float name="shutterOpen" value="0" />
+        <float name="shutterClose" value="1" />
+
         <float name="apertureRadius" value="0.02" />
 		<float name="fov" value="19.5"/>
 		<transform name="toWorld">
@@ -144,11 +147,16 @@
 	</shape>
 
 	<shape type="cube">
-		<transform name="toWorld">
-			<matrix value="0.0851643 0.289542 1.31134e-008 0.328631 3.72265e-009 1.26563e-008 -0.3 0.3 -0.284951 0.0865363 5.73206e-016 0.374592 0 0 0 1"/>
+      <animation name="toWorld">
+		<transform time="0">
+		  <matrix value="0.0851643 0.289542 1.31134e-008 0.328631 3.72265e-009 1.26563e-008 -0.3 0.45 -0.284951 0.0865363 5.73206e-016 0.374592 0 0 0 1"/>
 		</transform>
+		<transform time="1">
+		  <matrix value="0.0851643 0.289542 1.31134e-008 0.328631 3.72265e-009 1.26563e-008 -0.3 0.3 -0.284951 0.0865363 5.73206e-016 0.374592 0 0 0 1"/>
+		</transform>
+      </animation>
 
-		<ref id="ShortBox"/>
+	  <ref id="ShortBox"/>
 	</shape>
 
 	<shape type="cube">

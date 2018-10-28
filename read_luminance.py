@@ -5,7 +5,7 @@ from PIL import Image
 
 cols = 500
 rows = 500
-samples_per_coordinate = 20
+samples_per_coordinate = 200
 
 def run():
     values = []
@@ -17,9 +17,9 @@ def run():
             luminance, = struct.unpack("f", f.read(4))
             local_luminance.append(luminance)
 
-        values.append(np.mean(local_luminance))
+        values.append(min(1, np.mean(local_luminance)))
 
-    byte_values = (np.array(values) * 255).astype("uint8")
+    byte_values = ((np.array(values) ** (1/2.2)) * 255).astype("uint8")
 
     image = Image.frombytes("L", (cols, rows), byte_values)
     image.save("output.png")

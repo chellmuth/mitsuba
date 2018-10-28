@@ -72,6 +72,9 @@ public:
             ref<CJHSampler> directSampler = new CJHSampler("direct");
 
             std::vector<Float> sensorSamples = {
+                // t
+                input->readFloat(),
+
                 // u,v
                 input->readFloat(),
                 input->readFloat(),
@@ -117,11 +120,11 @@ public:
 
             Sensor *sensor = scene->getSensor();
 
+            Float timeSample = sensorSampler->next1D();
             Point2 apertureSample = sensorSampler->next2D();
             Point2 samplePos = sensorSampler->next2D();
             samplePos.x *= size[0];
             samplePos.y *= size[1];
-            Float timeSample = 0.f;
 
             RayDifferential sensorRay;
             Spectrum value = sensor->sampleRayDifferential(
@@ -135,7 +138,6 @@ public:
             rRec.newQuery(queryType, sensor->getMedium());
 
             value *= pathTracer->Li(sensorRay, rRec);
-            std::cout<<value.toString()<<std::endl;
 
             output->writeFloat(value.getLuminance());
         }
