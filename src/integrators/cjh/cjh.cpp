@@ -5,7 +5,7 @@
 #include "cjh_sampler.h"
 
 #include <mitsuba/core/fstream.h>
-#include <mitsuba/bidir/pathsampler.h>
+#include <mitsuba/core/plugin.h>
 
 MTS_NAMESPACE_BEGIN
 
@@ -64,6 +64,8 @@ public:
 
         ref<FileStream> output = new FileStream("luminance.bin", FileStream::ETruncWrite);
 
+        Vector2i size = scene->getFilm()->getSize();
+
         for (unsigned int i = 0; i < samples; i++) {
             ref<CJHSampler> sensorSampler = new CJHSampler("sensor");
             ref<CJHSampler> emitterSampler = new CJHSampler("emitter");
@@ -102,21 +104,40 @@ public:
             emitterSampler->setSamples(emitterSamples);
             directSampler->setSamples(directSamples);
 
-            ref<PathSampler> pathSampler = new PathSampler(
-                PathSampler::EUnidirectional,
-                scene,
-                sensorSampler, emitterSampler, directSampler,
-                3, // maxDepth
-                9999, // russian roulette start depth
-                false, // exclude direct illumination
-                true // custom sample direct logic
+            Properties props("path");
+            props.setInteger("maxDepth", 3);
+            props.setInteger("rrDepth", 9999);
+
+            ref<SamplingIntegrator> pathTracer = static_cast<SamplingIntegrator *>(
+                PluginManager::getInstance()->createObject(
+                    MTS_CLASS(SamplingIntegrator),
+                    props
+                )
             );
 
-            SplatList *current = new SplatList();
-            pathSampler->sampleSplats(Point2i(-1), *current);
+            Sensor *sensor = scene->getSensor();
 
-            output->writeFloat(current->luminance);
+            Point2 apertureSample = sensorSampler->next2D();
+            Point2 samplePos = sensorSampler->next2D();
+            samplePos.x *= size[0];
+            samplePos.y *= size[1];
+            Float timeSample = 0.f;
 
+            RayDifferential sensorRay;
+            Spectrum value = sensor->sampleRayDifferential(
+                sensorRay, samplePos, apertureSample, timeSample);
+
+            RadianceQueryRecord rRec(scene, sensorSampler);
+
+            uint32_t queryType = RadianceQueryRecord::ESensorRay \
+                & ~RadianceQueryRecord::EOpacity;
+
+            rRec.newQuery(queryType, sensor->getMedium());
+
+            value *= pathTracer->Li(sensorRay, rRec);
+            std::cout<<value.toString()<<std::endl;
+
+            output->writeFloat(value.getLuminance());
         }
 
         output->close();

@@ -22,8 +22,8 @@ def run():
         for x in range(cols):
             for _ in range(samples_per_coordinate):
                 args = [
-                    ("-Du=%f", 0.2),
-                    ("-Dv=%f", 0.8),
+                    ("-Du=%f", r.random()),
+                    ("-Dv=%f", r.random()),
                     ("-Dx=%f", (float(x) / cols) + r.random() * x_delta),
                     ("-Dy=%f", (float(y) / rows) + r.random() * y_delta),
                     ("-Ddirect1_1=%f", r.random()),
