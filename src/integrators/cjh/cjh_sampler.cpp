@@ -37,13 +37,13 @@ ref<Sampler> CJHSampler::clone() {
 }
 
 Float CJHSampler::next1D() {
-    printf("<%s> Request 1D\n", m_tag.c_str());
+    // printf("<%s> Request 1D\n", m_tag.c_str());
     Assert(m_sampleIndex < m_samples.size());
     return m_samples[m_sampleIndex++];
 }
 
 Point2 CJHSampler::next2D() {
-    printf("<%s> Request 2D\n", m_tag.c_str());
+    // printf("<%s> Request 2D\n", m_tag.c_str());
     Assert(m_sampleIndex + 1 < m_samples.size());
     Float value1 = m_samples[m_sampleIndex++];
     Float value2 = m_samples[m_sampleIndex++];

@@ -4,6 +4,7 @@
 #include "cjh.h"
 #include "cjh_sampler.h"
 
+#include <mitsuba/core/fstream.h>
 #include <mitsuba/bidir/pathsampler.h>
 
 MTS_NAMESPACE_BEGIN
@@ -57,57 +58,70 @@ public:
     bool render(Scene *scene, RenderQueue *queue, const RenderJob *job,
             int sceneResID, int sensorResID, int samplerResID) {
 
-        ref<CJHSampler> sensorSampler = new CJHSampler("sensor");
-        ref<CJHSampler> emitterSampler = new CJHSampler("emitter");
-        ref<CJHSampler> directSampler = new CJHSampler("direct");
+        ref<FileStream> input = new FileStream("randoms.bin", FileStream::EReadOnly);
+        unsigned int samples = input->readUInt();
+        printf("found %u samples\n", samples);
 
-        std::vector<Float> sensorSamples = {
-            m_config.u,
-            m_config.v,
+        ref<FileStream> output = new FileStream("luminance.bin", FileStream::ETruncWrite);
 
-            m_config.x,
-            m_config.y,
+        for (unsigned int i = 0; i < samples; i++) {
+            ref<CJHSampler> sensorSampler = new CJHSampler("sensor");
+            ref<CJHSampler> emitterSampler = new CJHSampler("emitter");
+            ref<CJHSampler> directSampler = new CJHSampler("direct");
 
-            // direct light
-            m_config.direct1_1,
-            m_config.direct1_2,
+            std::vector<Float> sensorSamples = {
+                // u,v
+                input->readFloat(),
+                input->readFloat(),
 
-            // bsdf
-            m_config.bsdf1_1,
-            m_config.bsdf1_2,
+                // x, y
+                input->readFloat(),
+                input->readFloat(),
 
-            // direct light
-            m_config.direct2_1,
-            m_config.direct2_2,
+                // direct 1
+                input->readFloat(),
+                input->readFloat(),
 
-            // bsdf
-            m_config.bsdf2_1,
-            m_config.bsdf2_2
-        };
+                // bsdf 1
+                input->readFloat(),
+                input->readFloat(),
 
-        std::vector<Float> emitterSamples = {};
-        std::vector<Float> directSamples = {};
+                // direct 2
+                input->readFloat(),
+                input->readFloat(),
 
-        sensorSampler->setSamples(sensorSamples);
-        emitterSampler->setSamples(emitterSamples);
-        directSampler->setSamples(directSamples);
+                // bsdf 2
+                input->readFloat(),
+                input->readFloat(),
+            };
 
-        ref<PathSampler> pathSampler = new PathSampler(
-            PathSampler::EUnidirectional,
-            scene,
-            sensorSampler, emitterSampler, directSampler,
-            3, // maxDepth
-            9999, // russian roulette start depth
-            false, // exclude direct illumination
-            true // custom sample direct logic
-        );
+            std::vector<Float> emitterSamples = {};
+            std::vector<Float> directSamples = {};
 
-        SplatList *current = new SplatList();
-        pathSampler->sampleSplats(Point2i(-1), *current);
+            sensorSampler->setSamples(sensorSamples);
+            emitterSampler->setSamples(emitterSamples);
+            directSampler->setSamples(directSamples);
 
-        std::cout << current->toString() << std::endl;
+            ref<PathSampler> pathSampler = new PathSampler(
+                PathSampler::EUnidirectional,
+                scene,
+                sensorSampler, emitterSampler, directSampler,
+                3, // maxDepth
+                9999, // russian roulette start depth
+                false, // exclude direct illumination
+                true // custom sample direct logic
+            );
 
+            SplatList *current = new SplatList();
+            pathSampler->sampleSplats(Point2i(-1), *current);
+
+            output->writeFloat(current->luminance);
+
+        }
+
+        output->close();
         printf("RENDERED EVERYTHING!!\n");
+
         return true;
     }
 

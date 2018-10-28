@@ -33,7 +33,7 @@
     </integrator>
 
 	<sensor type="thinlens">
-        <float name="apertureRadius" value="0.005" />
+        <float name="apertureRadius" value="0.02" />
 		<float name="fov" value="19.5"/>
 		<transform name="toWorld">
 			<matrix value="-1 0 0 0 0 1 0 1 0 0 -1 6.8 0 0 0 1"/>
@@ -47,7 +47,7 @@
 			<integer name="width" value="1024"/>
 			<integer name="height" value="1024"/>
 			<string name="fileFormat" value="png"/>
-			<string name="pixelFormat" value="rgb"/>
+			<string name="pixelFormat" value="luminance"/>
 			<float name="gamma" value="2.2"/>
 			<boolean name="banner" value="false"/>
 
