@@ -62,17 +62,35 @@ def render(cols, rows, spp, randoms_memoryview):
 
     x_delta = 1. / cols
     y_delta = 1. / rows
+
     for row in range(rows):
         for col in range(cols):
             for sample in range(spp):
-                sample_index = cols * row + col + sample
+                sample_index = ((cols * spp) * row) + (spp * col) + sample
+
                 x_sample = randoms_n[sample_index][X_INDEX]
                 y_sample = randoms_n[sample_index][Y_INDEX]
+
                 randoms_n[sample_index][X_INDEX] = (float(col) / cols) + x_sample * x_delta
-                randoms_n[sample_index][Y_INDEX] = (float(row) / rows) + y_sample * x_delta
+                randoms_n[sample_index][Y_INDEX] = (float(row) / rows) + y_sample * y_delta
 
     _write_randoms(randoms_n, "randoms.bin")
-    return array.array("f", _f())
+    fs = _f()
+
+    results = [ 0 for _ in range(rows * cols)]
+    for row in range(rows):
+        for col in range(cols):
+            pixel_sum = 0
+            for sample in range(spp):
+                result_index = ((cols * spp) * row) + (spp * col) + sample
+                pixel_sum += fs[result_index]
+
+            pixel_value = pixel_sum / spp
+            pixel_value = min(1, pixel_value ** (1/2.2))
+
+            results[cols * row + col] = pixel_value
+
+    return array.array("f", results)
 
 def _f():
     return_code = subprocess.call(
