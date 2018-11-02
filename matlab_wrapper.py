@@ -31,20 +31,35 @@ def read_luminances(in_path):
 
     return luminances
 
-def f_1(randoms_1):
+def _f_1(randoms_1, scene):
     _write_randoms([randoms_1], "randoms.bin")
-    return _f()[0]
+    return _f(scene)[0]
 
-def f_n(randoms_memoryview):
+def fa_1(randoms_1):
+    return _f_1(randoms_1, "cjh.xml")
+
+def fb_1(randoms_1):
+    return _f_1(randoms_1, "staircase/cjh-scene.xml")
+
+
+def _f_n(randoms_memoryview, scene):
     randoms_n = randoms_memoryview.tolist()
+
     _write_randoms(randoms_n, "randoms.bin")
-    return _f()
+    return _f(scene)
+
+def fa_n(randoms_memoryview):
+    return _f_n(randoms_memoryview, "cjh.xml")
+
+def fb_n(randoms_memoryview):
+    return _f_n(randoms_memoryview, "staircase/cjh-scene.xml")
+
 
 # see order in runner.py or cjh.cpp
 X_INDEX = 3
 Y_INDEX = 4
 
-def render(cols, rows, spp, randoms_memoryview):
+def _render(rows, cols, spp, randoms_memoryview, scene):
     cols = int(cols)
     rows = int(rows)
     spp = int(spp)
@@ -75,7 +90,7 @@ def render(cols, rows, spp, randoms_memoryview):
                 randoms_n[sample_index][Y_INDEX] = (float(row) / rows) + y_sample * y_delta
 
     _write_randoms(randoms_n, "randoms.bin")
-    fs = _f()
+    fs = _f(scene)
 
     results = [ 0 for _ in range(rows * cols)]
     for row in range(rows):
@@ -88,13 +103,20 @@ def render(cols, rows, spp, randoms_memoryview):
             pixel_value = pixel_sum / spp
             pixel_value = min(1, pixel_value ** (1/2.2))
 
-            results[cols * row + col] = pixel_value
+            # transpose
+            results[rows * col + row] = pixel_value
 
     return array.array("f", results)
 
-def _f():
+def rendera(rows, cols, spp, randoms_memoryview):
+    return _render(rows, cols, spp, randoms_memoryview, "cjh.xml")
+
+def renderb(rows, cols, spp, randoms_memoryview):
+    return _render(rows, cols, spp, randoms_memoryview, "staircase/cjh-scene.xml")
+
+def _f(scene):
     return_code = subprocess.call(
-        ["dist\\mitsuba", "cjh.xml"],
+        ["dist\\mitsuba", scene],
         env={"PATH": "./dist", "LD_LIBRARY_PATH": "./dist"}
     )
     if return_code != 0:
