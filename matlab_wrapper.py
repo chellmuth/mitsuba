@@ -1,12 +1,12 @@
 import subprocess
 import struct
 
-def _write_randoms(randoms_matrix, out_path):
+def _write_randoms(randoms_n, out_path):
     out_file = open(out_path, "wb")
 
     bin_floats = []
 
-    for randoms in randoms_matrix:
+    for randoms in randoms_n:
         bin_floats.append(struct.pack("f" * len(randoms), *randoms))
 
     out_file.write(struct.pack("I", len(bin_floats)))
@@ -20,10 +20,11 @@ def read_luminances(in_path):
 
     luminances = []
 
-    byte = f.read(4)
-    while byte:
-        luminance, = struct.unpack("f", byte)
-        byte = f.read(4)
+    bytes = f.read(4)
+    while bytes:
+        luminance, = struct.unpack("f", bytes)
+        luminances.append(luminance)
+        bytes = f.read(4)
 
     return luminances
 
@@ -31,8 +32,8 @@ def f_1(randoms_1):
     _write_randoms([randoms_1], "randoms.bin")
     return _f()[0]
 
-def f_n(randoms_n):
-    randoms_n = list(randoms_n)
+def f_n(randoms_memoryview):
+    randoms_n = randoms_memoryview.tolist()
     _write_randoms(randoms_n, "randoms.bin")
     return _f()
 
