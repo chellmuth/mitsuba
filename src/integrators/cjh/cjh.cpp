@@ -171,13 +171,19 @@ public:
     bool render(Scene *scene, RenderQueue *queue, const RenderJob *job,
             int sceneResID, int sensorResID, int samplerResID) {
 
+        WSADATA wsaData;
+        if (WSAStartup(MAKEWORD(2,2), &wsaData))
+            SLog(EError, "Could not initialize WinSock2!");
+        if (LOBYTE(wsaData.wVersion) != 2 || HIBYTE(wsaData.wVersion) != 2)
+            SLog(EError, "Could not find the required version of winsock.dll!");
 
         int listenPort = 65432;
         struct addrinfo hints, *servinfo, *p = NULL;
         memset(&hints, 0, sizeof(struct addrinfo));
-        hints.ai_family = AF_UNSPEC;
+        hints.ai_family = AF_INET;
         hints.ai_flags = AI_PASSIVE;
         hints.ai_socktype = SOCK_STREAM;
+        // hints.ai_protocol = IPPROTO_TCP;
         char portName[8];
         sock = INVALID_SOCKET;
 
@@ -193,6 +199,7 @@ public:
 
         int listenResult = listen(sock, 1);
         printf("listen: %d\n", listenResult);
+        printf("OKAY TO RUN MATLAB FUNCTIONS\n");
 
         int count = 1;
         while (true) {
@@ -205,22 +212,23 @@ public:
                 printf("INVALID!\n");
                 break;
 
-#if defined(__WINDOWS__)
-                if (!running)
-                    break;
-#else
-                if (errno == EINTR)
-                    continue;
-#endif
+// #if defined(__WINDOWS__)
+//                 if (!running)
+//                     break;
+// #else
+//                 if (errno == EINTR)
+//                     continue;
+// #endif
                 SocketStream::handleError("none", "accept", EWarn);
                 continue;
             }
 
             // printf("count: %d\n", count);
             runSample(scene, queue, job, sceneResID, sensorResID, samplerResID);
+
             send(newSocket, "!", 1, 0);
             count += 1;
-            close(newSocket);
+            closesocket(newSocket);
         }
 
         return true;
