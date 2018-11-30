@@ -2,6 +2,7 @@ from operator import mul
 
 import array
 import struct
+import socket
 import subprocess
 
 def _write_randoms(randoms_n, out_path):
@@ -18,7 +19,7 @@ def _write_randoms(randoms_n, out_path):
 
     out_file.close()
 
-def read_luminances(in_path):
+def _read_luminances(in_path):
     f = open(in_path, "rb")
 
     luminances = []
@@ -31,35 +32,15 @@ def read_luminances(in_path):
 
     return luminances
 
-def _f_1(randoms_1, scene):
+def f_1(randoms_1):
     _write_randoms([randoms_1], "randoms.bin")
-    return _f(scene)[0]
-
-def fa_1(randoms_1):
-    return _f_1(randoms_1, "cjh.xml")
-
-def fb_1(randoms_1):
-    return _f_1(randoms_1, "staircase/cjh-scene.xml")
-
-
-def _f_n(randoms_memoryview, scene):
-    randoms_n = randoms_memoryview.tolist()
-
-    _write_randoms(randoms_n, "randoms.bin")
-    return _f(scene)
-
-def fa_n(randoms_memoryview):
-    return _f_n(randoms_memoryview, "cjh.xml")
-
-def fb_n(randoms_memoryview):
-    return _f_n(randoms_memoryview, "staircase/cjh-scene.xml")
-
+    return _f()[0]
 
 # see order in runner.py or cjh.cpp
 X_INDEX = 3
 Y_INDEX = 4
 
-def _render(rows, cols, spp, randoms_memoryview, scene):
+def _render(rows, cols, spp, randoms_memoryview):
     cols = int(cols)
     rows = int(rows)
     spp = int(spp)
@@ -90,7 +71,7 @@ def _render(rows, cols, spp, randoms_memoryview, scene):
                 randoms_n[sample_index][Y_INDEX] = (float(row) / rows) + y_sample * y_delta
 
     _write_randoms(randoms_n, "randoms.bin")
-    fs = _f(scene)
+    fs = _f()
 
     results = [ 0 for _ in range(rows * cols)]
     for row in range(rows):
@@ -108,18 +89,18 @@ def _render(rows, cols, spp, randoms_memoryview, scene):
 
     return array.array("f", results)
 
-def rendera(rows, cols, spp, randoms_memoryview):
-    return _render(rows, cols, spp, randoms_memoryview, "cjh.xml")
+# re-enable after fixing for earlier matlab version
+# def render(rows, cols, spp, randoms_memoryview):
+#     return _render(rows, cols, spp, randoms_memoryview))
 
-def renderb(rows, cols, spp, randoms_memoryview):
-    return _render(rows, cols, spp, randoms_memoryview, "staircase/cjh-scene.xml")
 
-def _f(scene):
-    return_code = subprocess.call(
-        ["dist\\mitsuba", scene],
-        env={"PATH": "./dist", "LD_LIBRARY_PATH": "./dist"}
-    )
-    if return_code != 0:
-        raise BaseException("Failed call to Mitsuba")
+def _f():
+    HOST = '127.0.0.1'  # The server's hostname or IP address
+    PORT = 65432        # The port used by the server
 
-    return read_luminances("luminance.bin")
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        s.connect((HOST, PORT))
+        s.sendall(b'Hello, world')
+        data = s.recv(1)
+
+    return _read_luminances("luminance.bin")
