@@ -40,7 +40,7 @@ def f_1(randoms_1):
 X_INDEX = 3
 Y_INDEX = 4
 
-def _render(rows, cols, spp, randoms_memoryview):
+def render(rows, cols, spp, randoms_memoryview):
     cols = int(cols)
     rows = int(rows)
     spp = int(spp)
@@ -88,11 +88,6 @@ def _render(rows, cols, spp, randoms_memoryview):
             results[rows * col + row] = pixel_value
 
     return array.array("f", results)
-
-# re-enable after fixing for earlier matlab version
-# def render(rows, cols, spp, randoms_memoryview):
-#     return _render(rows, cols, spp, randoms_memoryview))
-
 
 def _f():
     HOST = '127.0.0.1'  # The server's hostname or IP address
