@@ -5,20 +5,6 @@ import struct
 import socket
 import subprocess
 
-def _write_randoms(randoms_n, out_path):
-    out_file = open(out_path, "wb")
-
-    bin_floats = []
-
-    for randoms in randoms_n:
-        bin_floats.append(struct.pack("f" * len(randoms), *randoms))
-
-    out_file.write(struct.pack("I", len(bin_floats)))
-    for bin_float in bin_floats:
-        out_file.write(bin_float)
-
-    out_file.close()
-
 def _read_luminances(in_path):
     f = open(in_path, "rb")
 
@@ -33,8 +19,7 @@ def _read_luminances(in_path):
     return luminances
 
 def f_1(randoms_1):
-    _write_randoms([randoms_1], "randoms.bin")
-    return _f()[0]
+    return _f(randoms_1)[0]
 
 # see order in runner.py or cjh.cpp
 X_INDEX = 3
@@ -89,13 +74,18 @@ def render(rows, cols, spp, randoms_memoryview):
 
     return array.array("f", results)
 
-def _f():
+def _f(samples):
     HOST = '127.0.0.1'  # The server's hostname or IP address
     PORT = 65432        # The port used by the server
 
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         s.connect((HOST, PORT))
-        s.sendall(b'Hello, world')
+
+        bytes = struct.pack("i", 1)
+        s.sendall(bytes)
+
+        bytes = struct.pack("f" * 13, *samples)
+        s.sendall(bytes)
         data = s.recv(1)
 
     return _read_luminances("luminance.bin")

@@ -78,49 +78,47 @@ public:
 
     void cancel() {}
 
-    void runSample(Scene *scene, RenderQueue *queue, const RenderJob *job,
-            int sceneResID, int sensorResID, int samplerResID) {
-
-        ref<FileStream> input = new FileStream("randoms.bin", FileStream::EReadOnly);
+    void runSample(Scene *scene, float *samples) {
         ref<FileStream> output = new FileStream("luminance.bin", FileStream::ETruncWrite);
 
-        unsigned int samples = input->readUInt();
+        unsigned int samplesCount = 1;
         // printf("found %u samples\n", samples);
 
         Vector2i size = scene->getFilm()->getSize();
 
-        for (unsigned int i = 0; i < samples; i++) {
+        for (unsigned int i = 0; i < samplesCount; i++) {
             ref<CJHSampler> sensorSampler = new CJHSampler("sensor");
             ref<CJHSampler> emitterSampler = new CJHSampler("emitter");
             ref<CJHSampler> directSampler = new CJHSampler("direct");
 
+            int sampleIndex = 0;
             std::vector<Float> sensorSamples = {
                 // t
-                input->readFloat(),
+                samples[sampleIndex++],
 
                 // u,v
-                input->readFloat(),
-                input->readFloat(),
+                samples[sampleIndex++],
+                samples[sampleIndex++],
 
                 // x, y
-                input->readFloat(),
-                input->readFloat(),
+                samples[sampleIndex++],
+                samples[sampleIndex++],
 
                 // direct 1
-                input->readFloat(),
-                input->readFloat(),
+                samples[sampleIndex++],
+                samples[sampleIndex++],
 
                 // bsdf 1
-                input->readFloat(),
-                input->readFloat(),
+                samples[sampleIndex++],
+                samples[sampleIndex++],
 
                 // direct 2
-                input->readFloat(),
-                input->readFloat(),
+                samples[sampleIndex++],
+                samples[sampleIndex++],
 
                 // bsdf 2
-                input->readFloat(),
-                input->readFloat(),
+                samples[sampleIndex++],
+                samples[sampleIndex++]
             };
 
             std::vector<Float> emitterSamples = {};
@@ -214,19 +212,24 @@ public:
                 printf("INVALID!\n");
                 break;
 
-// #if defined(__WINDOWS__)
-//                 if (!running)
-//                     break;
-// #else
-//                 if (errno == EINTR)
-//                     continue;
-// #endif
                 SocketStream::handleError("none", "accept", EWarn);
                 continue;
             }
 
+            ssize_t bytesRead;
+            int incomingSamples = 0;
+            read(newSocket, &incomingSamples, sizeof(incomingSamples));
+            // printf("read: %d\n", incomingSamples);
             // printf("count: %d\n", count);
-            runSample(scene, queue, job, sceneResID, sensorResID, samplerResID);
+            float samples[13];
+            bytesRead = read(newSocket, &samples, sizeof(samples));
+            // printf("bytes read (%d/%d)\n", bytesRead, sizeof(samples));
+            if (bytesRead != sizeof(samples)) {
+                printf("Only read %d bytes\n", bytesRead);
+                break;
+            }
+            // printf("sample1: %f, sample5: %f, sample13: %f\n", samples[0], samples[4], samples[12]);
+            runSample(scene, samples);
 
             send(newSocket, "!", 1, 0);
             count += 1;
