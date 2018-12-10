@@ -171,11 +171,13 @@ public:
     bool render(Scene *scene, RenderQueue *queue, const RenderJob *job,
             int sceneResID, int sensorResID, int samplerResID) {
 
+#if defined(__WINDOWS__)
         WSADATA wsaData;
         if (WSAStartup(MAKEWORD(2,2), &wsaData))
             SLog(EError, "Could not initialize WinSock2!");
         if (LOBYTE(wsaData.wVersion) != 2 || HIBYTE(wsaData.wVersion) != 2)
             SLog(EError, "Could not find the required version of winsock.dll!");
+#endif
 
         int listenPort = 65432;
         struct addrinfo hints, *servinfo, *p = NULL;
@@ -228,7 +230,11 @@ public:
 
             send(newSocket, "!", 1, 0);
             count += 1;
+#if defined(__WINDOWS__)
             closesocket(newSocket);
+#else
+            close(newSocket);
+#endif
         }
 
         return true;
