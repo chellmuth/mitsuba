@@ -78,7 +78,7 @@ public:
 
     void cancel() {}
 
-    void runSample(Scene *scene, float *samples) {
+    float runSample(Scene *scene, float *samples) {
         ref<FileStream> output = new FileStream("luminance.bin", FileStream::ETruncWrite);
 
         unsigned int samplesCount = 1;
@@ -161,6 +161,7 @@ public:
             value *= pathTracer->Li(sensorRay, rRec);
 
             output->writeFloat(value.getLuminance());
+            return value.getLuminance();
         }
 
         // printf("RENDERED EVERYTHING!!\n");
@@ -192,6 +193,18 @@ public:
         getaddrinfo(NULL, portName, &hints, &servinfo);
         p = servinfo;
         sock = socket(p->ai_family, p->ai_socktype, p->ai_protocol);
+
+        int enable = 1;
+        if (setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (const char *)&enable, sizeof(int)) < 0) {
+            printf("setsockopt(SO_REUSEADDR) failed");
+            return true;
+        }
+        // int disable = 0;
+        // if (setsockopt(sock, SOL_SOCKET, SO_LINGER, (const char *)&disable, sizeof(int)) < 0) {
+        //     printf("setsockopt(SO_LINGER) failed");
+        //     return true;
+        // }
+
         int bindResult = bind(sock, p->ai_addr, (socklen_t) p->ai_addrlen);
         printf("bind: %d\n", bindResult);
 
@@ -217,24 +230,37 @@ public:
             }
 
             ssize_t bytesRead;
-            int incomingSamples = 0;
-            read(newSocket, &incomingSamples, sizeof(incomingSamples));
+            int incomingSamples;
+            // printf("about to read\n");
+            // bytesRead = read(newSocket, &incomingSamples, sizeof(incomingSamples));
+            bytesRead = recv(newSocket, (char *)&incomingSamples, sizeof(incomingSamples), 0);
+
+            // printf("initial read done (%d)\n", bytesRead);
             // printf("read: %d\n", incomingSamples);
-            // printf("count: %d\n", count);
-            float samples[13];
-            bytesRead = read(newSocket, &samples, sizeof(samples));
-            // printf("bytes read (%d/%d)\n", bytesRead, sizeof(samples));
-            if (bytesRead != sizeof(samples)) {
-                printf("Only read %d bytes\n", bytesRead);
+            for (int i = 0; i < incomingSamples; i++) {
+                float samples[13];
+                // bytesRead = read(newSocket, &samples, sizeof(samples), 0);
+                bytesRead = recv(newSocket, (char *)&samples, sizeof(samples), 0);
+                // printf("bytes read (%d/%d)\n", bytesRead, sizeof(samples));
+                if (bytesRead != sizeof(samples)) {
+                    printf("Only read %d bytes\n", bytesRead);
+                    break;
+                }
+                // printf("sample1: %f, sample5: %f, sample13: %f\n", samples[0], samples[4], samples[12]);
+                float result = runSample(scene, samples);
+
+                // printf("result: %f (size %d)\n", result, sizeof(result));
+                send(newSocket, (char *)&result, 4, 0);
+                count += 1;
+            }
+
+            // shutdown(newSocket, 2);
+#if defined(__WINDOWS__)
+            int closeCode = closesocket(newSocket);
+            if (closeCode != 0) {
+                printf("BAD CLOSE CODE %d\n", closeCode);
                 break;
             }
-            // printf("sample1: %f, sample5: %f, sample13: %f\n", samples[0], samples[4], samples[12]);
-            runSample(scene, samples);
-
-            send(newSocket, "!", 1, 0);
-            count += 1;
-#if defined(__WINDOWS__)
-            closesocket(newSocket);
 #else
             close(newSocket);
 #endif

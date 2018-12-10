@@ -74,11 +74,16 @@ def render(rows, cols, spp, randoms_memoryview):
 
     return array.array("f", results)
 
+import time
+
 def _f(samples):
     HOST = '127.0.0.1'  # The server's hostname or IP address
     PORT = 65432        # The port used by the server
 
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        s.setsockopt(socket.SOL_SOCKET, socket.SO_LINGER, struct.pack('ii', 1, 0))
+
         s.connect((HOST, PORT))
 
         bytes = struct.pack("i", 1)
@@ -86,6 +91,9 @@ def _f(samples):
 
         bytes = struct.pack("f" * 13, *samples)
         s.sendall(bytes)
-        data = s.recv(1)
+        data = s.recv(4)
+
+        # s.shutdown(socket.SHUT_RDWR)
+        s.close()
 
     return _read_luminances("luminance.bin")
