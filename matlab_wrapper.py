@@ -5,19 +5,6 @@ import struct
 import socket
 import subprocess
 
-def _read_luminances(in_path):
-    f = open(in_path, "rb")
-
-    luminances = []
-
-    bytes = f.read(4)
-    while bytes:
-        luminance, = struct.unpack("f", bytes)
-        luminances.append(luminance)
-        bytes = f.read(4)
-
-    return luminances
-
 def f_1(randoms_1):
     return _f(randoms_1)[0]
 
@@ -96,4 +83,5 @@ def _f(samples):
         # s.shutdown(socket.SHUT_RDWR)
         s.close()
 
-    return _read_luminances("luminance.bin")
+        luminance, = struct.unpack("f", data)
+        return [luminance]

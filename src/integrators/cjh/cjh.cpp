@@ -79,7 +79,7 @@ public:
     void cancel() {}
 
     float runSample(Scene *scene, float *samples) {
-        ref<FileStream> output = new FileStream("luminance.bin", FileStream::ETruncWrite);
+        // ref<FileStream> output = new FileStream("luminance.bin", FileStream::ETruncWrite);
 
         unsigned int samplesCount = 1;
         // printf("found %u samples\n", samples);
@@ -160,7 +160,7 @@ public:
 
             value *= pathTracer->Li(sensorRay, rRec);
 
-            output->writeFloat(value.getLuminance());
+            // output->writeFloat(value.getLuminance());
             return value.getLuminance();
         }
 
