@@ -6,7 +6,10 @@ import socket
 import subprocess
 
 def f_1(randoms_1):
-    return _f(randoms_1)[0]
+    return _f([randoms_1])[0]
+
+def f_n(randoms_memoryview):
+    return _f(randoms_memoryview.tolist())
 
 # see order in runner.py or cjh.cpp
 X_INDEX = 3
@@ -67,21 +70,25 @@ def _f(samples):
     HOST = '127.0.0.1'  # The server's hostname or IP address
     PORT = 65432        # The port used by the server
 
+    luminances = []
+
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         s.setsockopt(socket.SOL_SOCKET, socket.SO_LINGER, struct.pack('ii', 1, 0))
 
         s.connect((HOST, PORT))
 
-        bytes = struct.pack("i", 1)
+        bytes = struct.pack("i", len(samples))
         s.sendall(bytes)
 
-        bytes = struct.pack("f" * 13, *samples)
-        s.sendall(bytes)
-        data = s.recv(4)
+        for sample in samples:
+            bytes = struct.pack("f" * 13, *sample)
+            s.sendall(bytes)
+            data = s.recv(4)
 
-        # s.shutdown(socket.SHUT_RDWR)
+            luminance, = struct.unpack("f", data)
+            luminances.append(luminance)
+
         s.close()
 
-        luminance, = struct.unpack("f", data)
-        return [luminance]
+        return luminances

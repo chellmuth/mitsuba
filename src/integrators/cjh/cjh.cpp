@@ -78,15 +78,12 @@ public:
 
     void cancel() {}
 
-    float runSample(Scene *scene, float *samples) {
+    float runSample(Scene *scene, float *samples, int sampleCount) {
         // ref<FileStream> output = new FileStream("luminance.bin", FileStream::ETruncWrite);
-
-        unsigned int samplesCount = 1;
-        // printf("found %u samples\n", samples);
 
         Vector2i size = scene->getFilm()->getSize();
 
-        for (unsigned int i = 0; i < samplesCount; i++) {
+        for (unsigned int i = 0; i < sampleCount; i++) {
             ref<CJHSampler> sensorSampler = new CJHSampler("sensor");
             ref<CJHSampler> emitterSampler = new CJHSampler("emitter");
             ref<CJHSampler> directSampler = new CJHSampler("direct");
@@ -247,7 +244,7 @@ public:
                     break;
                 }
                 // printf("sample1: %f, sample5: %f, sample13: %f\n", samples[0], samples[4], samples[12]);
-                float result = runSample(scene, samples);
+                float result = runSample(scene, samples, incomingSamples);
 
                 // printf("result: %f (size %d)\n", result, sizeof(result));
                 send(newSocket, (char *)&result, 4, 0);
