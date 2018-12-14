@@ -8,28 +8,33 @@ import subprocess
 def f_1(randoms_1):
     return _f([randoms_1])[0]
 
-def f_n(randoms_memoryview):
-    return _f(randoms_memoryview.tolist())
+def _reshape_randoms(flat_randoms):
+    return [
+        flat_randoms[i*13:i*13+13] for i in range(len(flat_randoms) // 13)
+    ]
+
+def f_n(randoms_n):
+    return _f(_reshape_randoms(randoms_n))
 
 # see order in runner.py or cjh.cpp
 X_INDEX = 3
 Y_INDEX = 4
 
-def render(rows, cols, spp, randoms_memoryview):
+def render(rows, cols, spp, flat_randoms):
     cols = int(cols)
     rows = int(rows)
     spp = int(spp)
 
     total_samples_needed = cols * rows * spp
 
-    total_samples_provided, _ = randoms_memoryview.shape
+    total_samples_provided = len(flat_randoms) // 13
     if total_samples_needed != total_samples_provided:
         raise BaseException(
             "Need (%d x %d x %d) = %d samples. Received %d."
             % (cols, rows, spp, total_samples_needed, total_samples_provided)
         )
 
-    randoms_n = randoms_memoryview.tolist()
+    randoms_n = _reshape_randoms(flat_randoms)
 
     x_delta = 1. / cols
     y_delta = 1. / rows
