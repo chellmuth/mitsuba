@@ -17,8 +17,8 @@ def f_n(randoms_n):
     return _f(_reshape_randoms(randoms_n))
 
 # see order in runner.py or cjh.cpp
-X_INDEX = 3
-Y_INDEX = 4
+X_INDEX = 0
+Y_INDEX = 1
 
 def render(rows, cols, spp, flat_randoms):
     cols = int(cols)

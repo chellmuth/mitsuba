@@ -91,31 +91,31 @@ public:
             int sampleIndex = 0;
             std::vector<Float> sensorSamples = {
                 // t
-                samples[sampleIndex++],
+                samples[4],
 
                 // u,v
-                samples[sampleIndex++],
-                samples[sampleIndex++],
+                samples[2],
+                samples[3],
 
                 // x, y
-                samples[sampleIndex++],
-                samples[sampleIndex++],
+                samples[0],
+                samples[1],
 
                 // direct 1
-                samples[sampleIndex++],
-                samples[sampleIndex++],
+                samples[5],
+                samples[6],
 
                 // bsdf 1
-                samples[sampleIndex++],
-                samples[sampleIndex++],
+                samples[7],
+                samples[8],
 
                 // direct 2
-                samples[sampleIndex++],
-                samples[sampleIndex++],
+                samples[9],
+                samples[10],
 
                 // bsdf 2
-                samples[sampleIndex++],
-                samples[sampleIndex++]
+                samples[11],
+                samples[12]
             };
 
             std::vector<Float> emitterSamples = {};
