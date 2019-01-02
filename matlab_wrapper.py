@@ -68,6 +68,40 @@ def render(rows, cols, spp, flat_randoms):
 
     return array.array("f", results)
 
+def slice(rows, cols, index_x, index_y, constants):
+    rows = int(rows)
+    cols = int(cols)
+    index_x = int(index_x)
+    index_y = int(index_y)
+
+    parameters = []
+    for row in range(rows):
+        for col in range(cols):
+            parameter = constants[:]
+            parameter[index_x] = col / cols
+            parameter[index_y] = row / rows
+            parameters.append(parameter)
+
+    luminances = _f(parameters)
+
+    spp = 1
+    results = [ 0 for _ in range(rows * cols)]
+    for row in range(rows):
+        for col in range(cols):
+            pixel_sum = 0
+            for sample in range(spp):
+                result_index = ((cols * spp) * row) + (spp * col) + sample
+                pixel_sum += luminances[result_index]
+
+            pixel_value = pixel_sum / spp
+            pixel_value = min(1, pixel_value ** (1/2.2))
+
+            # transpose
+            # results[rows * col + row] = pixel_value
+            results[cols * row + col] = pixel_value
+
+    return array.array("f", results)
+
 import time
 
 def _f(samples):
