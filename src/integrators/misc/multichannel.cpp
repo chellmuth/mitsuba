@@ -19,6 +19,9 @@
 #include <mitsuba/render/scene.h>
 #include <mitsuba/render/renderproc.h>
 
+#include <mitsuba/core/fstream.h>
+#include <stdlib.h>
+
 MTS_NAMESPACE_BEGIN
 
 /*!\plugin{multichannel}{Multi-channel integrator}
@@ -181,6 +184,9 @@ public:
         uint32_t queryType = RadianceQueryRecord::ESensorRay;
         Float *temp = (Float *) alloca(sizeof(Float) * (m_integrators.size() * SPECTRUM_SAMPLES + 2));
 
+        fs::path filename = formatString("runtime/multichannel_log_%i.txt", rand());
+        ref<FileStream> output = new FileStream(filename, FileStream::ETruncWrite);
+
         for (size_t i = 0; i<points.size(); ++i) {
             Point2i offset = Point2i(points[i]) + Vector2i(block->getOffset());
             if (stop)
@@ -188,7 +194,10 @@ public:
 
             sampler->generate(offset);
 
+            output->writeLine(formatString("pixel: (%i, %i)", offset.x, offset.y));
             for (size_t j = 0; j<sampler->getSampleCount(); j++) {
+                output->writeLine(formatString("sample: %i", j));
+
                 rRec.newQuery(queryType, sensor->getMedium());
                 Point2 samplePos(Point2(offset) + Vector2(rRec.nextSample2D()));
 
@@ -209,6 +218,8 @@ public:
                     RadianceQueryRecord rRec2(rRec);
                     rRec2.its = rRec.its;
                     Spectrum result = spec * m_integrators[k]->Li(sensorRay, rRec2);
+                    output->writeLine(result.toString());
+
                     for (int l = 0; l<SPECTRUM_SAMPLES; ++l)
                         temp[offset++] = result[l];
                 }
@@ -218,7 +229,10 @@ public:
                 sampler->advance();
             }
         }
+
+        output->close();
     }
+
 
     void bindUsedResources(ParallelProcess *proc) const {
         SamplingIntegrator::bindUsedResources(proc);
