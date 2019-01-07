@@ -1,0 +1,6 @@
+In addition to build system changes, set these environment variables:
+QTDIR=/usr/lib/x86_64-linux-gnu/qt5/
+QTINCLUDE=/usr/include/x86_64-linux-gnu/qt5
+
+> QTDIR=/usr/lib/x86_64-linux-gnu/qt5/ QTINCLUDE=/usr/include/x86_64-linux-gnu/qt5 scons
+
