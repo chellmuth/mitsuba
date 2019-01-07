@@ -8,14 +8,26 @@ WIDTH = 1280
 HEIGHT = 720
 SAMPLES = 16
 
-ALBEDO_R = 0
-ALBEDO_G = 1
-ALBEDO_B = 2
-NORMAL_R = 3
-NORMAL_G = 4
-NORMAL_B = 5
-DISTANCE = 6
-CHANNEL_COUNT = 7
+FEATURES = [
+    {
+        "name": "default",
+        "channels": 3,
+    },
+    {
+        "name": "albedo",
+        "channels": 3,
+    },
+    {
+        "name": "normal",
+        "channels": 3,
+    },
+    {
+        "name": "depth",
+        "channels": 1,
+    },
+]
+
+CHANNEL_COUNT = 10
 
 def parse(log, buffer):
     pixel_re = re.compile("pixel: \\((\\d+), (\\d+)\\)\n")
@@ -30,26 +42,17 @@ def parse(log, buffer):
 
         for sample_index in range(SAMPLES):
             log.readline() # sample: \d+
-            log.readline() # path traced radiance
 
-            albedo_match = spectrum_re.match(log.readline())
-            r, g, b = [ float(value) for value in albedo_match.group(1).split(",") ]
+            channel_base = 0
+            for feature in FEATURES:
+                spectrum_match = spectrum_re.match(log.readline())
+                spectrum = [ float(value) for value in spectrum_match.group(1).split(",") ]
 
-            buffer[x][y][ALBEDO_R][sample_index] = r
-            buffer[x][y][ALBEDO_G][sample_index] = g
-            buffer[x][y][ALBEDO_B][sample_index] = b
+                for channel_index in range(feature["channels"]):
+                    value = spectrum[channel_index]
+                    buffer[x][y][channel_base + channel_index][sample_index] = value
 
-            normal_match = spectrum_re.match(log.readline())
-            r, g, b = [ float(value) for value in normal_match.group(1).split(",") ]
-
-            buffer[x][y][NORMAL_R][sample_index] = r
-            buffer[x][y][NORMAL_G][sample_index] = g
-            buffer[x][y][NORMAL_B][sample_index] = b
-
-            distance_match = spectrum_re.match(log.readline())
-            r, g, b = [ float(value) for value in distance_match.group(1).split(",") ]
-
-            buffer[x][y][DISTANCE][sample_index] = r
+                channel_base += feature["channels"]
 
 def gather_log_paths(root_dir):
     return glob.glob(root_dir + "/multichannel_log*.txt")
@@ -66,25 +69,20 @@ if __name__ == "__main__":
             print("Parsed %d" % (i))
 
     print("Calculating variances")
-    channels = {
-        "albedo": numpy.empty((HEIGHT, WIDTH, 3)),
-        "normal": numpy.empty((HEIGHT, WIDTH, 3)),
-        "depth": numpy.empty((HEIGHT, WIDTH, 1)),
-    }
+
+    channels = {}
+
+    for feature in FEATURES:
+        channels[feature["name"]] = numpy.empty((HEIGHT, WIDTH, feature["channels"]))
 
     for x in range(HEIGHT):
         for y in range(WIDTH):
-            for channel_index in range(3):
-                channels["albedo"][x][y][channel_index] = \
-                    numpy.var(buffer[y][x][ALBEDO_R + channel_index])
+            channel_base = 0
 
-            for channel_index in range(3):
-                channels["normal"][x][y][channel_index] = \
-                    numpy.var(buffer[y][x][NORMAL_R + channel_index])
-
-            for channel_index in range(1):
-                channels["depth"][x][y][channel_index] = \
-                    numpy.var(buffer[y][x][DISTANCE + channel_index])
+            for feature in FEATURES:
+                for channel_index in range(feature["channels"]):
+                    value = numpy.var(buffer[y][x][channel_base + channel_index])
+                    channels[feature["name"]][x][y][channel_base + channel_index] = value
 
     print("Writing EXR")
     pyexr.write("variance.exr", channels)
