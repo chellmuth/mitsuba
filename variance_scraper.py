@@ -8,6 +8,24 @@ WIDTH = 1280
 HEIGHT = 720
 SAMPLES = 16
 
+FEATURES = [
+    {
+        "name": "color",
+        "channels": 3,
+        "skip": true,
+    },
+    {
+        "name": "albedo",
+        "channels": 3,
+    },
+        "name": "normal",
+        "channels": 3,
+    },
+        "name": "depth",
+        "channels": 1,
+    },
+]
+
 ALBEDO_R = 0
 ALBEDO_G = 1
 ALBEDO_B = 2
@@ -30,9 +48,9 @@ def parse(log, buffer):
 
         for sample_index in range(SAMPLES):
             log.readline() # sample: \d+
-            log.readline() # path traced radiance
 
-            albedo_match = spectrum_re.match(log.readline())
+            for feature in features:
+                albedo_match = spectrum_re.match(log.readline())
             r, g, b = [ float(value) for value in albedo_match.group(1).split(",") ]
 
             buffer[x][y][ALBEDO_R][sample_index] = r
