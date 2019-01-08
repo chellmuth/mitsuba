@@ -4,13 +4,13 @@ import re
 import numpy
 import pyexr
 
-WIDTH = 1280
-HEIGHT = 720
-SAMPLES = 16
+WIDTH = 640
+HEIGHT = 360
+SAMPLES = 32
 
 FEATURES = [
     {
-        "name": "default",
+        "name": "color",
         "channels": 3,
     },
     {
@@ -57,6 +57,9 @@ def parse(log, buffer):
 def gather_log_paths(root_dir):
     return glob.glob(root_dir + "/multichannel_log*.txt")
 
+def channel_name(feature):
+    return feature["name"] + "Variance"
+
 if __name__ == "__main__":
     buffer = numpy.empty((WIDTH, HEIGHT, CHANNEL_COUNT, SAMPLES), dtype=numpy.float)
 
@@ -73,7 +76,7 @@ if __name__ == "__main__":
     channels = {}
 
     for feature in FEATURES:
-        channels[feature["name"]] = numpy.empty((HEIGHT, WIDTH, feature["channels"]))
+        channels[channel_name(feature)] = numpy.empty((HEIGHT, WIDTH, feature["channels"]))
 
     for x in range(HEIGHT):
         for y in range(WIDTH):
@@ -82,7 +85,7 @@ if __name__ == "__main__":
             for feature in FEATURES:
                 for channel_index in range(feature["channels"]):
                     value = numpy.var(buffer[y][x][channel_base + channel_index])
-                    channels[feature["name"]][x][y][channel_base + channel_index] = value
+                    channels[channel_name(feature)][x][y][channel_base + channel_index] = value
 
     print("Writing EXR")
     pyexr.write("variance.exr", channels)
