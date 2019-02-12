@@ -89,7 +89,10 @@ MTS_NAMESPACE_BEGIN
 
 class MultiChannelIntegrator : public SamplingIntegrator {
 public:
-    MultiChannelIntegrator(const Properties &props) : SamplingIntegrator(props) { }
+    MultiChannelIntegrator(const Properties &props) : SamplingIntegrator(props) {
+        m_logRootPath = props.getString("logRootPath");
+        printf("ROOT: %s\n", m_logRootPath.c_str());
+    }
 
     MultiChannelIntegrator(Stream *stream, InstanceManager *manager)
      : SamplingIntegrator(stream, manager) {
@@ -184,7 +187,7 @@ public:
         uint32_t queryType = RadianceQueryRecord::ESensorRay;
         Float *temp = (Float *) alloca(sizeof(Float) * (m_integrators.size() * SPECTRUM_SAMPLES + 2));
 
-        fs::path filename = formatString("runtime/multichannel_log_%i.txt", rand());
+        fs::path filename = formatString("%s/multichannel_log_%i.txt", m_logRootPath.c_str(), rand());
         ref<FileStream> output = new FileStream(filename, FileStream::ETruncWrite);
 
         for (size_t i = 0; i<points.size(); ++i) {
@@ -196,8 +199,6 @@ public:
 
             output->writeLine(formatString("pixel: (%i, %i)", offset.x, offset.y));
             for (size_t j = 0; j<sampler->getSampleCount(); j++) {
-                output->writeLine(formatString("sample: %i", j));
-
                 rRec.newQuery(queryType, sensor->getMedium());
                 Point2 samplePos(Point2(offset) + Vector2(rRec.nextSample2D()));
 
@@ -218,7 +219,10 @@ public:
                     RadianceQueryRecord rRec2(rRec);
                     rRec2.its = rRec.its;
                     Spectrum result = spec * m_integrators[k]->Li(sensorRay, rRec2);
-                    output->writeLine(result.toString());
+                    if (k == 0) {
+                        output->writeLine(formatString("%f", result.getLuminance()));
+                    //     output->writeLine(formatString("%i", rRec2.depth));
+                    }
 
                     for (int l = 0; l<SPECTRUM_SAMPLES; ++l)
                         temp[offset++] = result[l];
@@ -289,6 +293,7 @@ public:
     MTS_DECLARE_CLASS()
 private:
     ref_vector<SamplingIntegrator> m_integrators;
+    std::string m_logRootPath;
 };
 
 MTS_IMPLEMENT_CLASS_S(MultiChannelIntegrator, false, SamplingIntegrator)

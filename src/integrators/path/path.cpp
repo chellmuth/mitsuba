@@ -108,9 +108,14 @@ static StatsCounter avgPathLength("Path tracer", "Average path length", EAverage
  * }
  */
 class MIPathTracer : public MonteCarloIntegrator {
+private:
+    float m_rrAttenuation;
+
 public:
     MIPathTracer(const Properties &props)
-        : MonteCarloIntegrator(props) { }
+        : MonteCarloIntegrator(props) {
+        m_rrAttenuation = props.getFloat("rrAttenuation");
+    }
 
     /// Unserialize from a binary data stream
     MIPathTracer(Stream *stream, InstanceManager *manager)
@@ -280,6 +285,7 @@ public:
                    getting stuck (e.g. due to total internal reflection) */
 
                 Float q = std::min(throughput.max() * eta * eta, (Float) 0.95f);
+                q *= m_rrAttenuation;
                 if (rRec.nextSample1D() >= q)
                     break;
                 throughput /= q;
