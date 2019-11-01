@@ -1,6 +1,9 @@
 #include <mitsuba/render/scene.h>
 #include <mitsuba/render/renderproc.h>
 
+#include <mitsuba/core/plugin.h>
+#include <mitsuba/core/bitmap.h>
+
 MTS_NAMESPACE_BEGIN
 
 class FisheyeIntegrator : public SamplingIntegrator {
@@ -24,10 +27,12 @@ public:
         int samplerResID
     ) {
         if (!SamplingIntegrator::preprocess(scene, queue, job, sceneResID, sensorResID, samplerResID)) {
+            Log(EError, "Base class error");
             return false;
         }
 
-        if (m_integrator->preprocess(scene, queue, job, sceneResID, sensorResID, samplerResID)) {
+        if (!m_integrator->preprocess(scene, queue, job, sceneResID, sensorResID, samplerResID)) {
+            Log(EError, "My integrator error");
             return false;
         }
 
@@ -86,59 +91,91 @@ public:
         const bool &stop, const std::vector< TPoint2<uint8_t> > &points
     ) const {
 
-        // Float diffScaleFactor = 1.0f /
-        //     std::sqrt((Float) sampler->getSampleCount());
+        Float diffScaleFactor = 1.0f /
+            std::sqrt((Float) sampler->getSampleCount());
 
-        // bool needsApertureSample = sensor->needsApertureSample();
-        // bool needsTimeSample = sensor->needsTimeSample();
+        RadianceQueryRecord rRec(scene, sampler);
+        Point2 apertureSample(0.5f);
+        Float timeSample = 0.5f;
+        RayDifferential sensorRay;
 
-        // RadianceQueryRecord rRec(scene, sampler);
-        // Point2 apertureSample(0.5f);
-        // Float timeSample = 0.5f;
-        // RayDifferential sensorRay;
+        block->clear();
 
-        // block->clear();
-
-        // uint32_t queryType = RadianceQueryRecord::ESensorRay;
+        uint32_t queryType = RadianceQueryRecord::ESensorRay;
         // Float *temp = (Float *) alloca(sizeof(Float) * (m_integrators.size() * SPECTRUM_SAMPLES + 2));
 
-        // for (size_t i = 0; i<points.size(); ++i) {
-        //     Point2i offset = Point2i(points[i]) + Vector2i(block->getOffset());
-        //     if (stop)
-        //         break;
+        for (size_t i = 0; i<points.size(); ++i) {
+            Point2i offset = Point2i(points[i]) + Vector2i(block->getOffset());
+            if (stop)
+                break;
 
-        //     sampler->generate(offset);
+            sampler->generate(offset);
 
-        //     for (size_t j = 0; j<sampler->getSampleCount(); j++) {
-        //         rRec.newQuery(queryType, sensor->getMedium());
-        //         Point2 samplePos(Point2(offset) + Vector2(rRec.nextSample2D()));
+            const int thetaSteps = 100;
+            const int phiSteps = 100;
+            const int spp = 32;
 
-        //         if (needsApertureSample)
-        //             apertureSample = rRec.nextSample2D();
+            Properties filmProps("HDRFilm");
+            filmProps.setInteger("width", phiSteps);
+            filmProps.setInteger("height", thetaSteps);
+            filmProps.setBoolean("banner", false);
 
-        //         if (needsTimeSample)
-        //             timeSample = rRec.nextSample1D();
+            for (size_t j = 0; j<sampler->getSampleCount(); j++) {
+                rRec.newQuery(queryType, sensor->getMedium());
+                Point2 samplePos(Point2(offset) + Vector2(rRec.nextSample2D()));
 
-        //         Spectrum spec = sensor->sampleRayDifferential(
-        //             sensorRay, samplePos, apertureSample, timeSample);
+                Spectrum spec = sensor->sampleRayDifferential(
+                    sensorRay, samplePos, apertureSample, timeSample);
 
-        //         sensorRay.scaleDifferential(diffScaleFactor);
-        //         rRec.rayIntersect(sensorRay);
+                sensorRay.scaleDifferential(diffScaleFactor);
+                rRec.rayIntersect(sensorRay);
 
-        //         int offset = 0;
-        //         for (size_t k = 0; k<m_integrators.size(); ++k) {
-        //             RadianceQueryRecord rRec2(rRec);
-        //             rRec2.its = rRec.its;
-        //             Spectrum result = spec * m_integrators[k]->Li(sensorRay, rRec2);
-        //             for (int l = 0; l<SPECTRUM_SAMPLES; ++l)
-        //                 temp[offset++] = result[l];
-        //         }
-        //         temp[offset++] = rRec.alpha;
-        //         temp[offset] = 1.0f;
-        //         block->put(samplePos, temp);
-        //         sampler->advance();
-        //     }
-        // }
+                ref<Film> film = static_cast<Film *>(
+                    PluginManager::getInstance()->createObject(MTS_CLASS(Film), filmProps)
+                );
+
+                std::ostringstream oss;
+                oss << "render_" << offset.x << "_" << offset.y << ".exr";
+                film->setDestinationFile(oss.str(), 0);
+
+                ref<Bitmap> bitmap = new Bitmap(Bitmap::ERGB, Bitmap::EUInt8, {phiSteps, thetaSteps});
+
+                RadianceQueryRecord rRec2(rRec);
+                rRec2.its = rRec.its;
+
+                RadianceQueryRecord nestedRec(scene, sampler);
+                for (int thetaStep = 0; thetaStep < thetaSteps; thetaStep++) {
+                    for (int phiStep = 0; phiStep < phiSteps; phiStep++) {
+                        Spectrum result(0.f);
+                        for (int sample = 0; sample < spp; sample++) {
+                            const Float theta = (M_PI / 2.f) * (thetaStep + 0.5f) / thetaSteps;
+                            const Float phi = (M_PI * 2.f) * (phiStep + 0.5f) / phiSteps;
+
+                            nestedRec.newQuery(RadianceQueryRecord::ESensorRay, sensor->getMedium());
+
+                            Float sinPhi, cosPhi;
+                            math::sincos(phi, &sinPhi, &cosPhi);
+
+                            Float cosTheta = cosf(theta);
+
+                            const Vector wo(cosPhi, sinPhi, cosTheta);
+                            RayDifferential fisheyeRay(rRec.its.p, wo, sensorRay.time);
+                            nestedRec.rayIntersect(fisheyeRay);
+                            result += m_integrator->Li(fisheyeRay, nestedRec) * (1.f / spp);
+                        }
+
+                        bitmap->setPixel({phiStep, thetaStep}, result);
+                    }
+                }
+
+                film->setBitmap(bitmap);
+                film->develop(scene, 0.f);
+
+                Spectrum result = spec * m_integrator->Li(sensorRay, rRec2);
+                block->put(samplePos, result, rRec.alpha);
+                sampler->advance();
+            }
+        }
     }
 
     void bindUsedResources(ParallelProcess *proc) const {
@@ -151,6 +188,16 @@ public:
         SamplingIntegrator::wakeup(parent, params);
 
         m_integrator->wakeup(parent, params);
+    }
+
+    void addChild(const std::string &name, ConfigurableObject *child) {
+        if (child->getClass()->derivesFrom(MTS_CLASS(SamplingIntegrator))) {
+            SamplingIntegrator *integrator = static_cast<SamplingIntegrator *>(child);
+            m_integrator = integrator;
+            integrator->incRef();
+        } else {
+            SamplingIntegrator::addChild(name, child);
+        }
     }
 
     Spectrum Li(const RayDifferential &r, RadianceQueryRecord &rRec) const {
