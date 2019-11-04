@@ -8,7 +8,13 @@ MTS_NAMESPACE_BEGIN
 
 class FisheyeIntegrator : public SamplingIntegrator {
 public:
-    FisheyeIntegrator(const Properties &props) : SamplingIntegrator(props) { }
+    FisheyeIntegrator(const Properties &props) : SamplingIntegrator(props)
+    {
+        m_x = props.getInteger("x");
+        m_y = props.getInteger("y");
+
+        std::cout << m_x << " " << m_y << std::endl;
+    }
 
     FisheyeIntegrator(Stream *stream, InstanceManager *manager)
      : SamplingIntegrator(stream, manager) {
@@ -85,6 +91,70 @@ public:
         return proc->getReturnStatus() == ParallelProcess::ESuccess;
     }
 
+    void renderFisheye(
+        const Scene *scene,
+        const Sensor *sensor,
+        Sampler *sampler,
+        const RadianceQueryRecord &rRec,
+        const RayDifferential &sensorRay
+    ) const {
+        const int thetaSteps = 400;
+        const int phiSteps = 400;
+        const int spp = 32;
+
+        Properties filmProps("HDRFilm");
+        filmProps.setInteger("width", phiSteps);
+        filmProps.setInteger("height", thetaSteps);
+        filmProps.setBoolean("banner", false);
+
+        ref<Film> film = static_cast<Film *>(
+            PluginManager::getInstance()->createObject(MTS_CLASS(Film), filmProps)
+        );
+
+        std::ostringstream oss;
+        oss << "render_" << m_x << "_" << m_y << ".exr";
+        film->setDestinationFile(oss.str(), 0);
+
+        ref<Bitmap> bitmap = new Bitmap(Bitmap::ERGB, Bitmap::EUInt8, {phiSteps, thetaSteps});
+
+        RadianceQueryRecord nestedRec(scene, sampler);
+        for (int thetaStep = 0; thetaStep < thetaSteps; thetaStep++) {
+            for (int phiStep = 0; phiStep < phiSteps; phiStep++) {
+                Spectrum result(0.f);
+                for (int sample = 0; sample < spp; sample++) {
+                    const Float theta = (M_PI / 2.f) * (thetaStep + 0.5f) / thetaSteps;
+                    const Float phi = (M_PI * 2.f) * (phiStep + 0.5f) / phiSteps;
+
+                    nestedRec.newQuery(RadianceQueryRecord::ESensorRay, sensor->getMedium());
+
+                    Float sinTheta, cosTheta;
+                    Float sinPhi, cosPhi;
+                    math::sincos(theta, &sinTheta, &cosTheta);
+                    math::sincos(phi, &sinPhi, &cosPhi);
+
+                    const Vector woLocal(cosPhi * sinTheta, sinPhi * sinTheta, cosTheta);
+                    const Vector wo = rRec.its.toWorld(woLocal);
+
+                    // std::cout << "theta: " << thetaStep << " " << "phi: " << phiStep << std::endl;
+                    // std::cout << woLocal.toString() << std::endl;
+                    // std::cout << wo.toString() << std::endl;
+                    // std::cout << std::endl;
+
+                    RayDifferential fisheyeRay(rRec.its.p, wo, sensorRay.time);
+                    fisheyeRay.mint = Epsilon;
+
+                    nestedRec.rayIntersect(fisheyeRay);
+                    result += m_integrator->Li(fisheyeRay, nestedRec) * (1.f / spp);
+                }
+
+                bitmap->setPixel({phiStep, thetaStep}, result);
+            }
+        }
+
+        film->setBitmap(bitmap);
+        film->develop(scene, 0.f);
+    }
+
     void renderBlock(
         const Scene *scene,
         const Sensor *sensor, Sampler *sampler, ImageBlock *block,
@@ -104,23 +174,14 @@ public:
         uint32_t queryType = RadianceQueryRecord::ESensorRay;
         // Float *temp = (Float *) alloca(sizeof(Float) * (m_integrators.size() * SPECTRUM_SAMPLES + 2));
 
-        for (size_t i = 0; i<points.size(); ++i) {
+        for (size_t i = 0; i < points.size(); ++i) {
             Point2i offset = Point2i(points[i]) + Vector2i(block->getOffset());
             if (stop)
                 break;
 
             sampler->generate(offset);
 
-            const int thetaSteps = 100;
-            const int phiSteps = 100;
-            const int spp = 32;
-
-            Properties filmProps("HDRFilm");
-            filmProps.setInteger("width", phiSteps);
-            filmProps.setInteger("height", thetaSteps);
-            filmProps.setBoolean("banner", false);
-
-            for (size_t j = 0; j<sampler->getSampleCount(); j++) {
+            for (size_t j = 0; j < sampler->getSampleCount(); j++) {
                 rRec.newQuery(queryType, sensor->getMedium());
                 Point2 samplePos(Point2(offset) + Vector2(rRec.nextSample2D()));
 
@@ -130,46 +191,12 @@ public:
                 sensorRay.scaleDifferential(diffScaleFactor);
                 rRec.rayIntersect(sensorRay);
 
-                ref<Film> film = static_cast<Film *>(
-                    PluginManager::getInstance()->createObject(MTS_CLASS(Film), filmProps)
-                );
-
-                std::ostringstream oss;
-                oss << "render_" << offset.x << "_" << offset.y << ".exr";
-                film->setDestinationFile(oss.str(), 0);
-
-                ref<Bitmap> bitmap = new Bitmap(Bitmap::ERGB, Bitmap::EUInt8, {phiSteps, thetaSteps});
+                if (offset.x == m_x && offset.y == m_y) {
+                    renderFisheye(scene, sensor, sampler, rRec, sensorRay);
+                }
 
                 RadianceQueryRecord rRec2(rRec);
                 rRec2.its = rRec.its;
-
-                RadianceQueryRecord nestedRec(scene, sampler);
-                for (int thetaStep = 0; thetaStep < thetaSteps; thetaStep++) {
-                    for (int phiStep = 0; phiStep < phiSteps; phiStep++) {
-                        Spectrum result(0.f);
-                        for (int sample = 0; sample < spp; sample++) {
-                            const Float theta = (M_PI / 2.f) * (thetaStep + 0.5f) / thetaSteps;
-                            const Float phi = (M_PI * 2.f) * (phiStep + 0.5f) / phiSteps;
-
-                            nestedRec.newQuery(RadianceQueryRecord::ESensorRay, sensor->getMedium());
-
-                            Float sinPhi, cosPhi;
-                            math::sincos(phi, &sinPhi, &cosPhi);
-
-                            Float cosTheta = cosf(theta);
-
-                            const Vector wo(cosPhi, sinPhi, cosTheta);
-                            RayDifferential fisheyeRay(rRec.its.p, wo, sensorRay.time);
-                            nestedRec.rayIntersect(fisheyeRay);
-                            result += m_integrator->Li(fisheyeRay, nestedRec) * (1.f / spp);
-                        }
-
-                        bitmap->setPixel({phiStep, thetaStep}, result);
-                    }
-                }
-
-                film->setBitmap(bitmap);
-                film->develop(scene, 0.f);
 
                 Spectrum result = spec * m_integrator->Li(sensorRay, rRec2);
                 block->put(samplePos, result, rRec.alpha);
@@ -213,6 +240,8 @@ public:
     MTS_DECLARE_CLASS()
 private:
     ref<SamplingIntegrator> m_integrator;
+    int m_x;
+    int m_y;
 };
 
 MTS_IMPLEMENT_CLASS_S(FisheyeIntegrator, false, SamplingIntegrator)
