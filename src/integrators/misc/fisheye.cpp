@@ -4,11 +4,16 @@
 #include <mitsuba/core/plugin.h>
 #include <mitsuba/core/bitmap.h>
 #include <mitsuba/render/gatherproc.h>
+#include <mitsuba/render/photon.h>
+#include <mitsuba/render/photonmap.h>
 
 MTS_NAMESPACE_BEGIN
 
 class FisheyeIntegrator : public SamplingIntegrator {
 public:
+    typedef PointKDTree<Photon>      PhotonTree;
+    typedef PhotonTree::SearchResult SearchResult;
+
     FisheyeIntegrator(const Properties &props) : SamplingIntegrator(props)
     {
         m_rrDepth = props.getInteger("rrDepth", 5);
@@ -90,6 +95,10 @@ public:
                 // m_globalPhotonMap->build();
                 // m_globalPhotonMapID = sched->registerResource(m_globalPhotonMap);
             }
+
+            m_globalPhotonMap = globalPhotonMap;
+            m_globalPhotonMap->setScaleFactor(1 / (Float) proc->getShotParticles());
+            m_globalPhotonMap->build();
         }
 
         return true;
@@ -141,6 +150,17 @@ public:
         return proc->getReturnStatus() == ParallelProcess::ESuccess;
     }
 
+    void gatherPhotons(
+        const Intersection &its
+    ) const {
+        const size_t maxPhotons = 10;
+        SearchResult *results = static_cast<SearchResult *>(
+            alloca((maxPhotons + 1) * sizeof(SearchResult)));
+
+        size_t resultCount = m_globalPhotonMap->nnSearch(its.p, maxPhotons, results);
+        Log(EInfo, "Photons returned: %i", resultCount);
+    }
+
     void renderFisheye(
         const Scene *scene,
         const Sensor *sensor,
@@ -166,6 +186,8 @@ public:
         film->setDestinationFile(oss.str(), 0);
 
         ref<Bitmap> bitmap = new Bitmap(Bitmap::ERGB, Bitmap::EUInt8, {phiSteps, thetaSteps});
+
+        gatherPhotons(rRec.its);
 
         RadianceQueryRecord nestedRec(scene, sampler);
         for (int thetaStep = 0; thetaStep < thetaSteps; thetaStep++) {
