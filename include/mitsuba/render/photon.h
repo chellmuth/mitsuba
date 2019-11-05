@@ -46,6 +46,10 @@ struct PhotonData {
     uint8_t thetaN;         //!< Discretized surface normal (\a theta component)
     uint8_t phiN;           //!< Discretized surface normal (\a phi component)
     uint16_t depth;         //!< Photon depth (number of preceding interactions)
+
+    Float sourceX;
+    Float sourceY;
+    Float sourceZ;
 };
 
 /** \brief Memory-efficient photon representation for use with
@@ -79,6 +83,10 @@ public:
     /// Return the depth (in # of interactions)
     inline int getDepth() const {
         return data.depth;
+    }
+
+    inline Point getSource() const {
+        return Point(data.sourceX, data.sourceY, data.sourceZ);
     }
 
     /**

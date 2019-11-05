@@ -153,12 +153,19 @@ public:
     void gatherPhotons(
         const Intersection &its
     ) const {
-        const size_t maxPhotons = 10;
+        const size_t maxPhotons = 100;
         SearchResult *results = static_cast<SearchResult *>(
             alloca((maxPhotons + 1) * sizeof(SearchResult)));
 
         size_t resultCount = m_globalPhotonMap->nnSearch(its.p, maxPhotons, results);
         Log(EInfo, "Photons returned: %i", resultCount);
+
+        for (size_t i = 0; i < resultCount; i++) {
+            const SearchResult &searchResult = results[i];
+            const PhotonMap &photonMap = (*m_globalPhotonMap.get());
+            const Photon &photon = photonMap[searchResult.index];
+            std::cout << photon.getSource().toString() << std::endl;
+        }
     }
 
     void renderFisheye(
