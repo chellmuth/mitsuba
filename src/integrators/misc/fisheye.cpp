@@ -3,6 +3,7 @@
 
 #include <mitsuba/core/plugin.h>
 #include <mitsuba/core/bitmap.h>
+#include <mitsuba/render/gatherproc.h>
 
 MTS_NAMESPACE_BEGIN
 
@@ -10,8 +11,15 @@ class FisheyeIntegrator : public SamplingIntegrator {
 public:
     FisheyeIntegrator(const Properties &props) : SamplingIntegrator(props)
     {
+        m_rrDepth = props.getInteger("rrDepth", 5);
+        m_maxDepth = props.getInteger("maxDepth", -1);
+
         m_x = props.getInteger("x");
         m_y = props.getInteger("y");
+
+        m_globalPhotons = props.getSize("globalPhotons", 10000);
+
+        Log(EInfo, "Fisheye constructor (%i, %i)", m_x, m_y);
 
         std::cout << m_x << " " << m_y << std::endl;
     }
@@ -28,8 +36,11 @@ public:
     }
 
     bool preprocess(
-        const Scene *scene, RenderQueue *queue,
-        const RenderJob *job, int sceneResID, int sensorResID,
+        const Scene *scene,
+        RenderQueue *queue,
+        const RenderJob *job,
+        int sceneResID,
+        int sensorResID,
         int samplerResID
     ) {
         if (!SamplingIntegrator::preprocess(scene, queue, job, sceneResID, sensorResID, samplerResID)) {
@@ -40,6 +51,45 @@ public:
         if (!m_integrator->preprocess(scene, queue, job, sceneResID, sensorResID, samplerResID)) {
             Log(EError, "My integrator error");
             return false;
+        }
+
+        if (m_globalPhotonMap.get() == NULL && m_globalPhotons > 0) {
+            /* Generate the global photon map */
+            ref<GatherPhotonProcess> proc = new GatherPhotonProcess(
+                GatherPhotonProcess::ESurfacePhotons,
+                m_globalPhotons, // count
+                0, // granularity for parallelization
+                m_maxDepth - 1,
+                m_rrDepth,
+                true, // gather locally
+                true, // auto-cancel if not enough photons are generated
+                job
+            );
+
+            proc->bindResource("scene", sceneResID);
+            proc->bindResource("sensor", sensorResID);
+            proc->bindResource("sampler", samplerResID);
+
+            ref<Scheduler> sched = Scheduler::getInstance();
+            m_proc = proc;
+            sched->schedule(proc);
+            sched->wait(proc);
+            m_proc = NULL;
+
+            if (proc->getReturnStatus() != ParallelProcess::ESuccess) {
+                return false;
+            }
+
+            ref<PhotonMap> globalPhotonMap = proc->getPhotonMap();
+            if (globalPhotonMap->isFull()) {
+                Log(EDebug, "Global photon map full. Shot " SIZE_T_FMT " particles, excess photons due to parallelism: "
+                    SIZE_T_FMT, proc->getShotParticles(), proc->getExcessPhotons());
+
+                // m_globalPhotonMap = globalPhotonMap;
+                // m_globalPhotonMap->setScaleFactor(1 / (Float) proc->getShotParticles());
+                // m_globalPhotonMap->build();
+                // m_globalPhotonMapID = sched->registerResource(m_globalPhotonMap);
+            }
         }
 
         return true;
@@ -239,9 +289,16 @@ public:
 
     MTS_DECLARE_CLASS()
 private:
+    int m_maxDepth;
+    int m_rrDepth;
+
     ref<SamplingIntegrator> m_integrator;
     int m_x;
     int m_y;
+
+    ref<ParallelProcess> m_proc;
+    ref<PhotonMap> m_globalPhotonMap;
+    size_t m_globalPhotons;
 };
 
 MTS_IMPLEMENT_CLASS_S(FisheyeIntegrator, false, SamplingIntegrator)
