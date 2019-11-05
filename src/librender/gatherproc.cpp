@@ -136,9 +136,11 @@ public:
         m_workResult->nextParticle();
     }
 
-    void handleSurfaceInteraction(int depth_, int nullInteractions, bool delta,
-            const Intersection &its, const Medium *medium,
-            const Spectrum &weight) {
+    void handleSurfaceInteraction(
+        int depth_, int nullInteractions, bool delta,
+        const Intersection &its, const Ray &ray,
+        const Medium *medium, const Spectrum &weight
+    ) {
         int bsdfType = its.getBSDF()->getType(), depth = depth_ - nullInteractions;
         if (!(bsdfType & BSDF::EDiffuseReflection) && !(bsdfType & BSDF::EGlossyReflection))
             return;
@@ -146,7 +148,7 @@ public:
         if ((m_type == GatherPhotonProcess::ECausticPhotons && depth > 1 && delta)
          || (m_type == GatherPhotonProcess::ESurfacePhotons && depth > 1 && !delta)
          || (m_type == GatherPhotonProcess::EAllSurfacePhotons))
-            m_workResult->put(Photon(its.p, its.geoFrame.n, -its.toWorld(its.wi), weight, depth));
+            m_workResult->put(Photon(its.p, its.geoFrame.n, -its.toWorld(its.wi), weight, depth, ray.o));
     }
 
     void handleMediumInteraction(int depth, int nullInteractions, bool delta,

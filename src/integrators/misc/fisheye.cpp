@@ -164,6 +164,7 @@ public:
             const SearchResult &searchResult = results[i];
             const PhotonMap &photonMap = (*m_globalPhotonMap.get());
             const Photon &photon = photonMap[searchResult.index];
+            std::cout << photon.getDirection().toString() << std::endl;
             std::cout << photon.getSource().toString() << std::endl;
         }
     }

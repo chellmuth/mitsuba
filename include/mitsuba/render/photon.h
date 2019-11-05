@@ -74,6 +74,10 @@ public:
             const Vector &dir, const Spectrum &power,
             uint16_t depth);
 
+    Photon(const Point &pos, const Normal &normal,
+            const Vector &dir, const Spectrum &power,
+            uint16_t depth, const Point &source);
+
     /// Unserialize from a binary data stream
     Photon(Stream *stream);
 

@@ -78,7 +78,14 @@ void Photon::serialize(Stream *stream) const {
 
 Photon::Photon(const Point &p, const Normal &normal,
                const Vector &dir, const Spectrum &P,
-               uint16_t _depth) {
+               uint16_t _depth)
+    : Photon(p, normal, dir, P, _depth, p)
+    {}
+
+Photon::Photon(const Point &p, const Normal &normal,
+               const Vector &dir, const Spectrum &P,
+               uint16_t _depth, const Point &source
+) {
     if (!P.isValid())
         SLog(EWarn, "Creating an invalid photon with power: %s", P.toString().c_str());
     /* Possibly convert to single precision floating point
@@ -118,6 +125,10 @@ Photon::Photon(const Point &p, const Normal &normal,
 #else
     data.power = P;
 #endif
+
+    data.sourceX = source.x;
+    data.sourceY = source.y;
+    data.sourceZ = source.z;
 }
 
 std::string Photon::toString() const {

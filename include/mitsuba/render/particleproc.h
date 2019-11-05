@@ -195,9 +195,10 @@ public:
      *    all preceding interactions except for the current surface
      *    interaction.
      */
-    virtual void handleSurfaceInteraction(int depth, int nullInteractions,
-        bool delta, const Intersection &its, const Medium *medium,
-        const Spectrum &weight);
+    virtual void handleSurfaceInteraction(
+        int depth, int nullInteractions, bool delta,
+        const Intersection &its, const Ray &ray,
+        const Medium *medium, const Spectrum &weight);
 
     /**
      * \brief Handle a medium interaction event

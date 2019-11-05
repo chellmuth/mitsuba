@@ -198,7 +198,7 @@ void ParticleTracer::process(const WorkUnit *workUnit, WorkResult *workResult,
                 const BSDF *bsdf = its.getBSDF();
 
                 /* Forward the surface scattering event to the attached handler */
-                handleSurfaceInteraction(depth, nullInteractions, delta, its, medium, throughput*power);
+                handleSurfaceInteraction(depth, nullInteractions, delta, its, ray, medium, throughput*power);
 
                 BSDFSamplingRecord bRec(its, m_sampler, EImportance);
                 Spectrum bsdfWeight = bsdf->sample(bRec, m_sampler->next2D());
@@ -270,9 +270,10 @@ void ParticleTracer::handleEmission(const PositionSamplingRecord &pRec,
 
 void ParticleTracer::handleNewParticle() { }
 
-void ParticleTracer::handleSurfaceInteraction(int depth, int nullInteractions,
-    bool delta, const Intersection &its, const Medium *medium,
-    const Spectrum &weight) { }
+void ParticleTracer::handleSurfaceInteraction(
+    int depth, int nullInteractions, bool delta,
+    const Intersection &its, const Ray &ray,
+    const Medium *medium, const Spectrum &weight) { }
 
 void ParticleTracer::handleMediumInteraction(int depth, int nullInteractions,
     bool delta, const MediumSamplingRecord &mRec, const Medium *medium,
