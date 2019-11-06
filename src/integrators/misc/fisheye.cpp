@@ -1,6 +1,7 @@
 #include <mitsuba/render/scene.h>
 #include <mitsuba/render/renderproc.h>
 
+#include <mitsuba/core/fstream.h>
 #include <mitsuba/core/plugin.h>
 #include <mitsuba/core/bitmap.h>
 #include <mitsuba/render/gatherproc.h>
@@ -160,13 +161,43 @@ public:
         size_t resultCount = m_globalPhotonMap->nnSearch(its.p, maxPhotons, results);
         Log(EInfo, "Photons returned: %i", resultCount);
 
+        ref<FileStream> fileStream = new FileStream("photons.bin", FileStream::ETruncWrite);
+
+        uint32_t buffer = resultCount;
+        fileStream->write(&buffer, sizeof(uint32_t));
+
         for (size_t i = 0; i < resultCount; i++) {
             const SearchResult &searchResult = results[i];
             const PhotonMap &photonMap = (*m_globalPhotonMap.get());
             const Photon &photon = photonMap[searchResult.index];
+
+            Point position = photon.getPosition();
+            Point source = photon.getSource();
+
+            float r, g, b;
+            Spectrum power = photon.getPower();
+            power.toLinearRGB(r, g, b);
+
+            float photonBuffer[] = {
+                position.x,
+                position.y,
+                position.z,
+
+                source.x,
+                source.y,
+                source.z,
+
+                r, g, b
+            };
+
+            fileStream->write(photonBuffer, sizeof(float) * 9);
+
             std::cout << photon.getDirection().toString() << std::endl;
             std::cout << photon.getSource().toString() << std::endl;
+            std::cout << photon.getPower().toString() << std::endl;
         }
+
+        fileStream->close();
     }
 
     void renderFisheye(
