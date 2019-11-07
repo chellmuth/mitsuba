@@ -163,8 +163,18 @@ public:
 
         ref<FileStream> fileStream = new FileStream("photons.bin", FileStream::ETruncWrite);
 
-        uint32_t buffer = resultCount;
-        fileStream->write(&buffer, sizeof(uint32_t));
+        float intersectionBuffer[] = {
+            its.p.x,
+            its.p.y,
+            its.p.z,
+            its.geoFrame.n.x,
+            its.geoFrame.n.y,
+            its.geoFrame.n.z,
+        };
+        fileStream->write(&intersectionBuffer, 6 * sizeof(float));
+
+        uint32_t countBuffer = resultCount;
+        fileStream->write(&countBuffer, sizeof(uint32_t));
 
         for (size_t i = 0; i < resultCount; i++) {
             const SearchResult &searchResult = results[i];
@@ -192,7 +202,8 @@ public:
 
             fileStream->write(photonBuffer, sizeof(float) * 9);
 
-            std::cout << photon.getDirection().toString() << std::endl;
+            std::cout << "PHOTON RECORD:" << std::endl;
+            std::cout << photon.getPosition().toString() << std::endl;
             std::cout << photon.getSource().toString() << std::endl;
             std::cout << photon.getPower().toString() << std::endl;
         }
