@@ -154,12 +154,17 @@ public:
     void gatherPhotons(
         const Intersection &its
     ) const {
-        const size_t maxPhotons = 100;
+        const size_t maxPhotons = 200;
         SearchResult *results = static_cast<SearchResult *>(
             alloca((maxPhotons + 1) * sizeof(SearchResult)));
 
         size_t resultCount = m_globalPhotonMap->nnSearch(its.p, maxPhotons, results);
         Log(EInfo, "Photons returned: %i", resultCount);
+
+        std::cout << "INTERSECTION RECORD:" << std::endl;
+        std::cout << its.p.toString() << std::endl;
+        std::cout << its.geoFrame.n.toString() << std::endl;
+        std::cout << its.wi.toString() << std::endl;
 
         ref<FileStream> fileStream = new FileStream("photons.bin", FileStream::ETruncWrite);
 
@@ -170,8 +175,11 @@ public:
             its.geoFrame.n.x,
             its.geoFrame.n.y,
             its.geoFrame.n.z,
+            its.wi.x,
+            its.wi.y,
+            its.wi.z,
         };
-        fileStream->write(&intersectionBuffer, 6 * sizeof(float));
+        fileStream->write(&intersectionBuffer, 9 * sizeof(float));
 
         uint32_t countBuffer = resultCount;
         fileStream->write(&countBuffer, sizeof(uint32_t));
