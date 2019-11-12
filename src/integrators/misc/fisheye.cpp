@@ -154,7 +154,7 @@ public:
     void gatherPhotons(
         const Intersection &its
     ) const {
-        const size_t maxPhotons = 200;
+        const size_t maxPhotons = 100;
         SearchResult *results = static_cast<SearchResult *>(
             alloca((maxPhotons + 1) * sizeof(SearchResult)));
 

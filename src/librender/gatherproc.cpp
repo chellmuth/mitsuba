@@ -145,6 +145,8 @@ public:
         if (!(bsdfType & BSDF::EDiffuseReflection) && !(bsdfType & BSDF::EGlossyReflection))
             return;
 
+        if (depth == 1) { return; } // cjh
+
         if ((m_type == GatherPhotonProcess::ECausticPhotons && depth > 1 && delta)
          || (m_type == GatherPhotonProcess::ESurfacePhotons && depth > 1 && !delta)
          || (m_type == GatherPhotonProcess::EAllSurfacePhotons))
