@@ -22,12 +22,11 @@ public:
 
         m_x = props.getInteger("x");
         m_y = props.getInteger("y");
+        m_pdfCount = props.getSize("pdfCount");
 
         m_globalPhotons = props.getSize("globalPhotons", 10000);
 
-        Log(EInfo, "Fisheye constructor (%i, %i)", m_x, m_y);
-
-        std::cout << m_x << " " << m_y << std::endl;
+        Log(EInfo, "Fisheye constructor (%i, %i, %i)", m_x, m_y, m_pdfCount);
     }
 
     FisheyeIntegrator(Stream *stream, InstanceManager *manager)
@@ -152,7 +151,9 @@ public:
     }
 
     void gatherPhotons(
-        const Intersection &its
+        const Intersection &its,
+        const ImageBlock *block = nullptr,
+        const int identifier = -1
     ) const {
         const size_t maxPhotons = 100;
         SearchResult *results = static_cast<SearchResult *>(
@@ -166,7 +167,15 @@ public:
         std::cout << its.geoFrame.n.toString() << std::endl;
         std::cout << its.wi.toString() << std::endl;
 
-        ref<FileStream> fileStream = new FileStream("photons.bin", FileStream::ETruncWrite);
+        std::ostringstream oss;
+        if (identifier < 0) {
+            oss << "photons.bin";
+        } else {
+            auto offset = Vector2i(block->getOffset());
+            oss << "results/photons_" << identifier << "-block_" << offset.x << "x" << offset.y << ".bin";
+        }
+
+        ref<FileStream> fileStream = new FileStream(oss.str(), FileStream::ETruncWrite);
 
         float intersectionBuffer[] = {
             its.p.x,
@@ -224,7 +233,9 @@ public:
         const Sensor *sensor,
         Sampler *sampler,
         const RadianceQueryRecord &rRec,
-        const RayDifferential &sensorRay
+        const RayDifferential &sensorRay,
+        const ImageBlock *block = nullptr,
+        const int identifier = -1
     ) const {
         const int thetaSteps = 400;
         const int phiSteps = 400;
@@ -240,12 +251,17 @@ public:
         );
 
         std::ostringstream oss;
-        oss << "render_" << m_x << "_" << m_y << ".exr";
+        if (identifier < 0) {
+            oss << "render_" << m_x << "_" << m_y << ".exr";
+        } else {
+            auto offset = Vector2i(block->getOffset());
+            oss << "results/pdf_" << identifier << "-block_" << offset.x << "x" << offset.y << ".exr";
+        }
         film->setDestinationFile(oss.str(), 0);
 
         ref<Bitmap> bitmap = new Bitmap(Bitmap::ERGB, Bitmap::EUInt8, {phiSteps, thetaSteps});
 
-        gatherPhotons(rRec.its);
+        gatherPhotons(rRec.its, block, identifier);
 
         RadianceQueryRecord nestedRec(scene, sampler);
         for (int thetaStep = 0; thetaStep < thetaSteps; thetaStep++) {
@@ -290,9 +306,7 @@ public:
         const Sensor *sensor, Sampler *sampler, ImageBlock *block,
         const bool &stop, const std::vector< TPoint2<uint8_t> > &points
     ) const {
-
-        Float diffScaleFactor = 1.0f /
-            std::sqrt((Float) sampler->getSampleCount());
+        Float diffScaleFactor = 1.0f / std::sqrt((Float) sampler->getSampleCount());
 
         RadianceQueryRecord rRec(scene, sampler);
         Point2 apertureSample(0.5f);
@@ -302,7 +316,6 @@ public:
         block->clear();
 
         uint32_t queryType = RadianceQueryRecord::ESensorRay;
-        // Float *temp = (Float *) alloca(sizeof(Float) * (m_integrators.size() * SPECTRUM_SAMPLES + 2));
 
         for (size_t i = 0; i < points.size(); ++i) {
             Point2i offset = Point2i(points[i]) + Vector2i(block->getOffset());
@@ -333,6 +346,21 @@ public:
                 sampler->advance();
             }
         }
+
+        for (int i = 0; i < m_pdfCount; i++) {
+            rRec.newQuery(queryType, sensor->getMedium());
+            float sampleX = rRec.nextSample1D() * block->getWidth() + block->getOffset().x;
+            float sampleY = rRec.nextSample1D() * block->getHeight() + block->getOffset().y;
+
+            Point2 samplePos(sampleX, sampleY);
+            sensor->sampleRayDifferential(sensorRay, samplePos, apertureSample, timeSample);
+            sensorRay.scaleDifferential(diffScaleFactor);
+
+            rRec.rayIntersect(sensorRay);
+
+            renderFisheye(scene, sensor, sampler, rRec, sensorRay, block, i);
+        }
+
     }
 
     void bindUsedResources(ParallelProcess *proc) const {
@@ -375,6 +403,7 @@ private:
     ref<SamplingIntegrator> m_integrator;
     int m_x;
     int m_y;
+    int m_pdfCount;
 
     ref<ParallelProcess> m_proc;
     ref<PhotonMap> m_globalPhotonMap;
