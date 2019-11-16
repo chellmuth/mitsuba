@@ -25,6 +25,7 @@ public:
         m_pdfCount = props.getSize("pdfCount");
 
         m_globalPhotons = props.getSize("globalPhotons", 10000);
+        m_globalPhotons = 0;
 
         Log(EInfo, "Fisheye constructor (%i, %i, %i)", m_x, m_y, m_pdfCount);
     }
@@ -85,20 +86,20 @@ public:
                 return false;
             }
 
-            ref<PhotonMap> globalPhotonMap = proc->getPhotonMap();
-            if (globalPhotonMap->isFull()) {
-                Log(EDebug, "Global photon map full. Shot " SIZE_T_FMT " particles, excess photons due to parallelism: "
-                    SIZE_T_FMT, proc->getShotParticles(), proc->getExcessPhotons());
+            // ref<PhotonMap> globalPhotonMap = proc->getPhotonMap();
+            // if (globalPhotonMap->isFull()) {
+            //     Log(EDebug, "Global photon map full. Shot " SIZE_T_FMT " particles, excess photons due to parallelism: "
+            //         SIZE_T_FMT, proc->getShotParticles(), proc->getExcessPhotons());
 
-                // m_globalPhotonMap = globalPhotonMap;
-                // m_globalPhotonMap->setScaleFactor(1 / (Float) proc->getShotParticles());
-                // m_globalPhotonMap->build();
-                // m_globalPhotonMapID = sched->registerResource(m_globalPhotonMap);
-            }
+            //     // m_globalPhotonMap = globalPhotonMap;
+            //     // m_globalPhotonMap->setScaleFactor(1 / (Float) proc->getShotParticles());
+            //     // m_globalPhotonMap->build();
+            //     // m_globalPhotonMapID = sched->registerResource(m_globalPhotonMap);
+            // }
 
-            m_globalPhotonMap = globalPhotonMap;
-            m_globalPhotonMap->setScaleFactor(1 / (Float) proc->getShotParticles());
-            m_globalPhotonMap->build();
+            // m_globalPhotonMap = globalPhotonMap;
+            // m_globalPhotonMap->setScaleFactor(1 / (Float) proc->getShotParticles());
+            // m_globalPhotonMap->build();
         }
 
         return true;
@@ -155,6 +156,7 @@ public:
         const ImageBlock *block = nullptr,
         const int identifier = -1
     ) const {
+        return;
         const size_t maxPhotons = 100;
         SearchResult *results = static_cast<SearchResult *>(
             alloca((maxPhotons + 1) * sizeof(SearchResult)));
@@ -162,10 +164,10 @@ public:
         size_t resultCount = m_globalPhotonMap->nnSearch(its.p, maxPhotons, results);
         Log(EInfo, "Photons returned: %i", resultCount);
 
-        std::cout << "INTERSECTION RECORD:" << std::endl;
-        std::cout << its.p.toString() << std::endl;
-        std::cout << its.geoFrame.n.toString() << std::endl;
-        std::cout << its.wi.toString() << std::endl;
+        // std::cout << "INTERSECTION RECORD:" << std::endl;
+        // std::cout << its.p.toString() << std::endl;
+        // std::cout << its.geoFrame.n.toString() << std::endl;
+        // std::cout << its.wi.toString() << std::endl;
 
         std::ostringstream oss;
         if (identifier < 0) {
@@ -219,10 +221,10 @@ public:
 
             fileStream->write(photonBuffer, sizeof(float) * 9);
 
-            std::cout << "PHOTON RECORD:" << std::endl;
-            std::cout << photon.getPosition().toString() << std::endl;
-            std::cout << photon.getSource().toString() << std::endl;
-            std::cout << photon.getPower().toString() << std::endl;
+        //     std::cout << "PHOTON RECORD:" << std::endl;
+        //     std::cout << photon.getPosition().toString() << std::endl;
+        //     std::cout << photon.getSource().toString() << std::endl;
+        //     std::cout << photon.getPower().toString() << std::endl;
         }
 
         fileStream->close();
@@ -237,9 +239,9 @@ public:
         const ImageBlock *block = nullptr,
         const int identifier = -1
     ) const {
-        const int thetaSteps = 400;
-        const int phiSteps = 400;
-        const int spp = 32;
+        const int thetaSteps = 1;
+        const int phiSteps = 1;
+        const int spp = 1;
 
         Properties filmProps("HDRFilm");
         filmProps.setInteger("width", phiSteps);
@@ -263,6 +265,7 @@ public:
 
         gatherPhotons(rRec.its, block, identifier);
 
+        std::cout << "RENDER FISHEYE" << std::endl;
         RadianceQueryRecord nestedRec(scene, sampler);
         for (int thetaStep = 0; thetaStep < thetaSteps; thetaStep++) {
             for (int phiStep = 0; phiStep < phiSteps; phiStep++) {
@@ -281,21 +284,26 @@ public:
                     const Vector woLocal(cosPhi * sinTheta, sinPhi * sinTheta, cosTheta);
                     const Vector wo = rRec.its.toWorld(woLocal);
 
-                    // std::cout << "theta: " << thetaStep << " " << "phi: " << phiStep << std::endl;
-                    // std::cout << woLocal.toString() << std::endl;
-                    // std::cout << wo.toString() << std::endl;
-                    // std::cout << std::endl;
+                    std::cout << "theta: " << thetaStep << " " << "phi: " << phiStep << std::endl;
+                    std::cout << woLocal.toString() << std::endl;
+                    std::cout << wo.toString() << std::endl;
+                    std::cout << rRec.its.p.toString() << std::endl;
+                    std::cout << rRec.its.shFrame.n.toString() << std::endl;
+                    std::cout << std::endl;
 
                     RayDifferential fisheyeRay(rRec.its.p, wo, sensorRay.time);
                     fisheyeRay.mint = Epsilon;
 
-                    nestedRec.rayIntersect(fisheyeRay);
+                    if (nestedRec.rayIntersect(fisheyeRay)) {
+                        std::cout << "GOT SOMETHING!" << std::endl;
+                    }
                     result += m_integrator->Li(fisheyeRay, nestedRec) * (1.f / spp);
                 }
 
                 bitmap->setPixel({phiStep, thetaStep}, result);
             }
         }
+        std::cout << "END FISHEYE" << std::endl;
 
         film->setBitmap(bitmap);
         film->develop(scene, 0.f);
@@ -325,6 +333,9 @@ public:
             sampler->generate(offset);
 
             for (size_t j = 0; j < sampler->getSampleCount(); j++) {
+                if (offset.x == m_x && offset.y == m_y) {}
+                else { continue; }
+
                 rRec.newQuery(queryType, sensor->getMedium());
                 Point2 samplePos(Point2(offset) + Vector2(rRec.nextSample2D()));
 
