@@ -239,9 +239,9 @@ public:
         const ImageBlock *block = nullptr,
         const int identifier = -1
     ) const {
-        const int thetaSteps = 1;
-        const int phiSteps = 1;
-        const int spp = 1;
+        const int thetaSteps = 400;
+        const int phiSteps = 400;
+        const int spp = 32;
 
         Properties filmProps("HDRFilm");
         filmProps.setInteger("width", phiSteps);
