@@ -117,7 +117,6 @@ public:
         : MonteCarloIntegrator(stream, manager) { }
 
     Spectrum Li(const RayDifferential &r, RadianceQueryRecord &rRec) const {
-        std::cout << "HELLO I AM HERE" << std::endl;
         /* Some aliases and local variables */
         const Scene *scene = rRec.scene;
         Intersection &its = rRec.its;
@@ -208,18 +207,13 @@ public:
             Float bsdfPdf;
             BSDFSamplingRecord bRec(its, rRec.sampler, ERadiance);
             Spectrum bsdfWeight = bsdf->sample(bRec, bsdfPdf, rRec.nextSample2D());
-            std::cout << "BSDF BOUNCE: " << bRec.wo.toString() << std::endl;
             if (bsdfWeight.isZero())
                 break;
 
             scattered |= bRec.sampledType != BSDF::ENull;
 
             /* Prevent light leaks due to the use of shading normals */
-            std::cout << "BSDF BOUNCE: " << bRec.wo.toString() << std::endl;
             const Vector wo = its.toWorld(bRec.wo);
-            std::cout << "BSDF WO: " << wo.toString() << std::endl;
-            std::cout << "ITS P: " << its.p.toString() << std::endl;
-            std::cout << "ITS N: " << its.shFrame.n.toString() << std::endl;
             Float woDotGeoN = dot(its.geoFrame.n, wo);
             if (m_strictNormals && woDotGeoN * Frame::cosTheta(bRec.wo) <= 0)
                 break;

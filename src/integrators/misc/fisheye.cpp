@@ -234,7 +234,7 @@ public:
         const Scene *scene,
         const Sensor *sensor,
         Sampler *sampler,
-        const RadianceQueryRecord &rRec,
+        RadianceQueryRecord &rRec,
         const RayDifferential &sensorRay,
         const ImageBlock *block = nullptr,
         const int identifier = -1
@@ -265,7 +265,20 @@ public:
 
         gatherPhotons(rRec.its, block, identifier);
 
-        std::cout << "RENDER FISHEYE" << std::endl;
+        const BSDF *bsdf = rRec.its.getBSDF(sensorRay);
+
+        Float bsdfPdf;
+        BSDFSamplingRecord bRec(rRec.its, rRec.sampler, ERadiance);
+        bsdf->sample(bRec, bsdfPdf, rRec.nextSample2D());
+
+        const Vector bsdfWo = rRec.its.toWorld(bRec.wo);
+        const Vector testWo = rRec.its.toWorld(Vector(0.f, 0.f, 1.f));
+
+        bool flipBounce = false;
+        if (dot(bsdfWo, testWo) < 0.f) {
+            flipBounce = true;
+        }
+
         RadianceQueryRecord nestedRec(scene, sampler);
         for (int thetaStep = 0; thetaStep < thetaSteps; thetaStep++) {
             for (int phiStep = 0; phiStep < phiSteps; phiStep++) {
@@ -281,29 +294,30 @@ public:
                     math::sincos(theta, &sinTheta, &cosTheta);
                     math::sincos(phi, &sinPhi, &cosPhi);
 
+                    if (flipBounce) {
+                        cosTheta *= -1.f;
+                    } else {
+                    }
+
                     const Vector woLocal(cosPhi * sinTheta, sinPhi * sinTheta, cosTheta);
                     const Vector wo = rRec.its.toWorld(woLocal);
 
-                    std::cout << "theta: " << thetaStep << " " << "phi: " << phiStep << std::endl;
-                    std::cout << woLocal.toString() << std::endl;
-                    std::cout << wo.toString() << std::endl;
-                    std::cout << rRec.its.p.toString() << std::endl;
-                    std::cout << rRec.its.shFrame.n.toString() << std::endl;
-                    std::cout << std::endl;
+                    // std::cout << "theta: " << thetaStep << " " << "phi: " << phiStep << std::endl;
+                    // std::cout << woLocal.toString() << std::endl;
+                    // std::cout << wo.toString() << std::endl;
+                    // std::cout << rRec.its.p.toString() << std::endl;
+                    // std::cout << rRec.its.shFrame.n.toString() << std::endl;
+                    // std::cout << std::endl;
 
                     RayDifferential fisheyeRay(rRec.its.p, wo, sensorRay.time);
                     fisheyeRay.mint = Epsilon;
 
-                    if (nestedRec.rayIntersect(fisheyeRay)) {
-                        std::cout << "GOT SOMETHING!" << std::endl;
-                    }
                     result += m_integrator->Li(fisheyeRay, nestedRec) * (1.f / spp);
                 }
 
                 bitmap->setPixel({phiStep, thetaStep}, result);
             }
         }
-        std::cout << "END FISHEYE" << std::endl;
 
         film->setBitmap(bitmap);
         film->develop(scene, 0.f);

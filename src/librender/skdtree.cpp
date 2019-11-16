@@ -110,7 +110,6 @@ void ShapeKDTree::build() {
 }
 
 bool ShapeKDTree::rayIntersect(const Ray &ray, Intersection &its) const {
-    std::cout << "RAY INTERSECT!" << std::endl;
     uint8_t temp[MTS_KD_INTERSECTION_TEMP];
     its.t = std::numeric_limits<Float>::infinity();
     Float mint, maxt;
@@ -123,8 +122,6 @@ bool ShapeKDTree::rayIntersect(const Ray &ray, Intersection &its) const {
 
     ++raysTraced;
     if (m_aabb.rayIntersect(ray, mint, maxt)) {
-        std::cout << "  AABB INTERSECT!" << std::endl;
-
         /* Use an adaptive ray epsilon */
         Float rayMinT = ray.mint;
         if (rayMinT == Epsilon)
@@ -135,14 +132,8 @@ bool ShapeKDTree::rayIntersect(const Ray &ray, Intersection &its) const {
         if (ray.maxt < maxt) maxt = ray.maxt;
 
         if (EXPECT_TAKEN(maxt > mint)) {
-            std::cout << "    EXPECTED MAXT > MINT!" << std::endl;
-            std::cout << "    " << ray.toString() << std::endl;
-
             if (rayIntersectHavran<false>(ray, mint, maxt, its.t, temp)) {
-                std::cout << "      HAVRAN INTERSECT!" << std::endl;
                 fillIntersectionRecord<true>(ray, temp, its);
-                std::cout << "        INTERSECTION POINT: " << its.p.toString() << std::endl;
-                std::cout << "        INTERSECTION N: " << its.shFrame.n.toString() << std::endl;
                 return true;
             }
         }

@@ -142,15 +142,11 @@ public:
             return Spectrum(0.0f);
 
         bRec.wo = warp::squareToCosineHemisphere(sample);
-        std::cout << "DIFFUSE WO: " << bRec.wo.toString() << std::endl;
         bRec.eta = 1.0f;
         bRec.sampledComponent = 0;
         bRec.sampledType = EDiffuseReflection;
         pdf = warp::squareToCosineHemispherePdf(bRec.wo);
-        std::cout << "DIFFUSE WO: " << bRec.wo.toString() << std::endl;
-        Spectrum r = m_reflectance->eval(bRec.its);
-        std::cout << "DIFFUSE WO: " << bRec.wo.toString() << std::endl;
-        return r;
+        return m_reflectance->eval(bRec.its);
     }
 
     void addChild(const std::string &name, ConfigurableObject *child) {
