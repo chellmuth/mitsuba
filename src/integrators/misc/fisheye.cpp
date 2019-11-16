@@ -156,7 +156,6 @@ public:
         const ImageBlock *block = nullptr,
         const int identifier = -1
     ) const {
-        return;
         const size_t maxPhotons = 100;
         SearchResult *results = static_cast<SearchResult *>(
             alloca((maxPhotons + 1) * sizeof(SearchResult)));
