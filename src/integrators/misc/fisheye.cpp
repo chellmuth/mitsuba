@@ -160,7 +160,7 @@ public:
             alloca((maxPhotons + 1) * sizeof(SearchResult)));
 
         size_t resultCount = m_globalPhotonMap->nnSearch(its.p, maxPhotons, results);
-        Log(EInfo, "Photons returned: %i", resultCount);
+        // Log(EInfo, "Photons returned: %i", resultCount);
 
         // std::cout << "INTERSECTION RECORD:" << std::endl;
         // std::cout << its.p.toString() << std::endl;
