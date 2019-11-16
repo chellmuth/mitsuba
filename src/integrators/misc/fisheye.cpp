@@ -25,7 +25,6 @@ public:
         m_pdfCount = props.getSize("pdfCount");
 
         m_globalPhotons = props.getSize("globalPhotons", 10000);
-        m_globalPhotons = 0;
 
         Log(EInfo, "Fisheye constructor (%i, %i, %i)", m_x, m_y, m_pdfCount);
     }
@@ -86,20 +85,20 @@ public:
                 return false;
             }
 
-            // ref<PhotonMap> globalPhotonMap = proc->getPhotonMap();
-            // if (globalPhotonMap->isFull()) {
-            //     Log(EDebug, "Global photon map full. Shot " SIZE_T_FMT " particles, excess photons due to parallelism: "
-            //         SIZE_T_FMT, proc->getShotParticles(), proc->getExcessPhotons());
+            ref<PhotonMap> globalPhotonMap = proc->getPhotonMap();
+            if (globalPhotonMap->isFull()) {
+                Log(EDebug, "Global photon map full. Shot " SIZE_T_FMT " particles, excess photons due to parallelism: "
+                    SIZE_T_FMT, proc->getShotParticles(), proc->getExcessPhotons());
 
-            //     // m_globalPhotonMap = globalPhotonMap;
-            //     // m_globalPhotonMap->setScaleFactor(1 / (Float) proc->getShotParticles());
-            //     // m_globalPhotonMap->build();
-            //     // m_globalPhotonMapID = sched->registerResource(m_globalPhotonMap);
-            // }
+                // m_globalPhotonMap = globalPhotonMap;
+                // m_globalPhotonMap->setScaleFactor(1 / (Float) proc->getShotParticles());
+                // m_globalPhotonMap->build();
+                // m_globalPhotonMapID = sched->registerResource(m_globalPhotonMap);
+            }
 
-            // m_globalPhotonMap = globalPhotonMap;
-            // m_globalPhotonMap->setScaleFactor(1 / (Float) proc->getShotParticles());
-            // m_globalPhotonMap->build();
+            m_globalPhotonMap = globalPhotonMap;
+            m_globalPhotonMap->setScaleFactor(1 / (Float) proc->getShotParticles());
+            m_globalPhotonMap->build();
         }
 
         return true;
