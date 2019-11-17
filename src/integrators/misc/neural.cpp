@@ -87,12 +87,9 @@ public:
         return true;
     }
 
-    void gatherPhotons(
-        const Intersection &its,
-        bool flipNormal,
-        const ImageBlock *block = nullptr,
-        const int identifier = -1
-    ) const {
+    Spectrum neuralSample(BSDFSamplingRecord &bRec, Float &pdf) const {
+        const Intersection &its = bRec.its;
+
         const size_t maxPhotons = 100;
         SearchResult *results = static_cast<SearchResult *>(
             alloca((maxPhotons + 1) * sizeof(SearchResult)));
@@ -134,6 +131,8 @@ public:
         //     std::cout << photon.getSource().toString() << std::endl;
         //     std::cout << photon.getPower().toString() << std::endl;
         }
+
+        return Spectrum(0.f);
     }
 
     Spectrum Li(const RayDifferential &r, RadianceQueryRecord &rRec) const {
@@ -226,7 +225,10 @@ public:
             /* Sample BSDF * cos(theta) */
             Float bsdfPdf;
             BSDFSamplingRecord bRec(its, rRec.sampler, ERadiance);
-            Spectrum bsdfWeight = bsdf->sample(bRec, bsdfPdf, rRec.nextSample2D());
+
+            // Spectrum bsdfWeight = bsdf->sample(bRec, bsdfPdf, rRec.nextSample2D());
+            Spectrum bsdfWeight = neuralSample(bRec, bsdfPdf);
+
             if (bsdfWeight.isZero())
                 break;
 
