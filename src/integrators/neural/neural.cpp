@@ -136,6 +136,10 @@ public:
         //     std::cout << photon.getPower().toString() << std::endl;
         }
 
+        std::vector<float> photonBundle(100, 0.f);
+        float phi, theta, pdf2;
+        m_neuralPDF.sample(&phi, &theta, &pdf2, photonBundle);
+
         return Spectrum(0.f);
     }
 

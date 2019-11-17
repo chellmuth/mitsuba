@@ -12,6 +12,7 @@
 MTS_NAMESPACE_BEGIN
 
 static const int PORT = 65432;
+static const float M_TWO_PI = M_PI * 2.f;
 
 bool NeuralPDF::connectToModel(int portOffset)
 {
@@ -40,6 +41,35 @@ bool NeuralPDF::connectToModel(int portOffset)
     }
 
     return true;
+}
+
+void NeuralPDF::sample(float *phi, float *theta, float *pdf, std::vector<float> &photonBundle) const
+{
+    const int count = 1;
+    int hello[] = { 0, count };
+    send(m_socket, &hello, sizeof(int) * 2, 0);
+
+    float *photonData = photonBundle.data();
+    send(m_socket, photonData, sizeof(float) * photonBundle.size(), 0);
+
+    float buffer[3] = {0.f, 0.f, 0.f};
+    int bytesRead = recv(m_socket, buffer, sizeof(buffer), 0);
+
+    assert(bytesRead == sizeof(float) * 3);
+
+    *phi = buffer[0] * M_TWO_PI;
+    *theta = (1.f - buffer[1]) * (M_PI / 2.f);
+    // *theta = buffer[1] * (M_PI / 2.f);
+    *pdf = buffer[2] / sinf(*theta) / (M_TWO_PI * M_PI / 2.f);
+
+    if (*phi < 0 || *phi > M_TWO_PI || *theta < 0 || *theta > (M_PI/2.f) || *pdf < 0) {
+        std::cout << "UHOH: " << *phi << " " << *theta << " " << *pdf
+                  << " " << buffer[0] << " " << buffer[1] << " " << buffer[2]
+                  << std::endl;
+
+        sample(phi, theta, pdf, photonBundle);
+    }
+    // printf("(%f %f %f) (%f %f)\n", *phi, *theta, *pdf, buffer[0], buffer[1]);
 }
 
 MTS_NAMESPACE_END

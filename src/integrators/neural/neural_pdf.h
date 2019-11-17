@@ -3,12 +3,16 @@
 
 #include <mitsuba/mitsuba.h>
 
+#include <vector>
+
 MTS_NAMESPACE_BEGIN
 
 class NeuralPDF {
 public:
     bool connectToModel(int portOffset);
     bool connectToModel() { return connectToModel(0); }
+
+    void sample(float *x, float *y, float *pdf, std::vector<float> &photonBundle) const;
 
 private:
     int m_socket;
