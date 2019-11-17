@@ -152,6 +152,7 @@ public:
 
     void gatherPhotons(
         const Intersection &its,
+        bool flipNormal,
         const ImageBlock *block = nullptr,
         const int identifier = -1
     ) const {
@@ -181,9 +182,9 @@ public:
             its.p.x,
             its.p.y,
             its.p.z,
-            its.geoFrame.n.x,
-            its.geoFrame.n.y,
-            its.geoFrame.n.z,
+            its.shFrame.n.x * (flipNormal ? -1.f : 1.f),
+            its.shFrame.n.y * (flipNormal ? -1.f : 1.f),
+            its.shFrame.n.z * (flipNormal ? -1.f : 1.f),
             its.wi.x,
             its.wi.y,
             its.wi.z,
@@ -261,8 +262,6 @@ public:
 
         ref<Bitmap> bitmap = new Bitmap(Bitmap::ERGB, Bitmap::EUInt8, {phiSteps, thetaSteps});
 
-        gatherPhotons(rRec.its, block, identifier);
-
         const BSDF *bsdf = rRec.its.getBSDF(sensorRay);
 
         Float bsdfPdf;
@@ -294,7 +293,6 @@ public:
 
                     if (flipBounce) {
                         cosTheta *= -1.f;
-                    } else {
                     }
 
                     const Vector woLocal(cosPhi * sinTheta, sinPhi * sinTheta, cosTheta);
@@ -319,6 +317,8 @@ public:
 
         film->setBitmap(bitmap);
         film->develop(scene, 0.f);
+
+        gatherPhotons(rRec.its, flipBounce, block, identifier);
     }
 
     void renderBlock(
