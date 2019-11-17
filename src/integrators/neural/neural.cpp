@@ -9,8 +9,6 @@
 #include <mitsuba/render/photon.h>
 #include <mitsuba/render/photonmap.h>
 
-#include "neural_pdf.h"
-
 MTS_NAMESPACE_BEGIN
 
 static StatsCounter avgPathLength("Path tracer", "Average path length", EAverage);
@@ -21,7 +19,7 @@ public:
     typedef PhotonTree::SearchResult SearchResult;
 
     NeuralIntegrator(const Properties &props)
-        : MonteCarloIntegrator(props), m_neuralPDF()
+        : MonteCarloIntegrator(props)
         {
             m_globalPhotons = props.getSize("globalPhotons", 10000);
         }
@@ -344,8 +342,6 @@ private:
     ref<ParallelProcess> m_proc;
     ref<PhotonMap> m_globalPhotonMap;
     size_t m_globalPhotons;
-
-    NeuralPDF m_neuralPDF;
 };
 
 MTS_IMPLEMENT_CLASS_S(NeuralIntegrator, false, MonteCarloIntegrator)
