@@ -10,6 +10,7 @@
 #include <mitsuba/render/photonmap.h>
 
 #include "neural_pdf.h"
+#include "photon_bundle.h"
 
 MTS_NAMESPACE_BEGIN
 
