@@ -100,6 +100,9 @@ public:
             alloca((maxPhotons + 1) * sizeof(SearchResult)));
 
         size_t resultCount = m_globalPhotonMap->nnSearch(its.p, maxPhotons, results);
+
+        PhotonBundle bundle(its.p, its.shFrame, 10, 10);
+
         // Log(EInfo, "Photons returned: %i", resultCount);
 
         // std::cout << "INTERSECTION RECORD:" << std::endl;
@@ -111,6 +114,8 @@ public:
             const SearchResult &searchResult = results[i];
             const PhotonMap &photonMap = (*m_globalPhotonMap.get());
             const Photon &photon = photonMap[searchResult.index];
+
+            bundle.splat(photon);
 
             Point position = photon.getPosition();
             Point source = photon.getSource();
