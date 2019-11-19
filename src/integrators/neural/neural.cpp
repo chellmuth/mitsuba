@@ -5,6 +5,7 @@
 #include <mitsuba/core/fstream.h>
 #include <mitsuba/core/plugin.h>
 #include <mitsuba/core/bitmap.h>
+#include <mitsuba/render/bsdf.h>
 #include <mitsuba/render/gatherproc.h>
 #include <mitsuba/render/photon.h>
 #include <mitsuba/render/photonmap.h>
@@ -92,7 +93,7 @@ public:
         return true;
     }
 
-    Spectrum neuralSample(BSDFSamplingRecord &bRec, Float &pdf) const {
+    Spectrum neuralSample(const BSDF *bsdf, BSDFSamplingRecord &bRec, Float &pdf) const {
         const Intersection &its = bRec.its;
 
         const size_t maxPhotons = 100;
@@ -122,7 +123,13 @@ public:
         float phi, theta, pdf2;
         m_neuralPDF.sample(&phi, &theta, &pdf2, photonBundle);
 
-        return Spectrum(0.f);
+        bRec.wo = Vector(1, 0, 0);
+        bRec.eta = 1.f;
+        bRec.sampledComponent = 0;
+        bRec.sampledType = BSDF::EDiffuseReflection;
+
+        pdf = bsdf->pdf(bRec);
+        return bsdf->eval(bRec);
     }
 
     Spectrum Li(const RayDifferential &r, RadianceQueryRecord &rRec) const {
@@ -217,7 +224,7 @@ public:
             BSDFSamplingRecord bRec(its, rRec.sampler, ERadiance);
 
             // Spectrum bsdfWeight = bsdf->sample(bRec, bsdfPdf, rRec.nextSample2D());
-            Spectrum bsdfWeight = neuralSample(bRec, bsdfPdf);
+            Spectrum bsdfWeight = neuralSample(bsdf, bRec, bsdfPdf);
 
             if (bsdfWeight.isZero())
                 break;
