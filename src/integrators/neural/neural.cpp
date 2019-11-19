@@ -114,7 +114,7 @@ public:
         return true;
     }
 
-    Spectrum neuralSample(const BSDF *bsdf, BSDFSamplingRecord &bRec, Float &pdf) const {
+    Spectrum neuralSample(const BSDF *bsdf, BSDFSamplingRecord &bRec, Float &pdf, bool debugPixel) const {
         const Intersection &its = bRec.its;
 
         const size_t maxPhotons = 100;
@@ -132,13 +132,6 @@ public:
         Frame neuralFrame = constructNeuralFrame(normal, its.wi);
         PhotonBundle bundle(its.p, neuralFrame, 10, 10);
 
-        // Log(EInfo, "Photons returned: %i", resultCount);
-
-        // std::cout << "INTERSECTION RECORD:" << std::endl;
-        // std::cout << its.p.toString() << std::endl;
-        // std::cout << its.geoFrame.n.toString() << std::endl;
-        // std::cout << its.wi.toString() << std::endl;
-
         for (size_t i = 0; i < resultCount; i++) {
             const SearchResult &searchResult = results[i];
             const PhotonMap &photonMap = (*m_globalPhotonMap.get());
@@ -147,9 +140,13 @@ public:
             bundle.splat(photon);
         }
 
-        std::vector<float> photonBundle = bundle.serialized();
+        std::vector<Float> photonBundle = bundle.serialized();
         float phi, theta, pdf2;
         m_neuralPDF.sample(&phi, &theta, &pdf2, photonBundle);
+
+        if (debugPixel) {
+            m_neuralPDF.batchEval(10, photonBundle);
+        }
 
         Vector localDirection = sphericalToCartesian(phi, theta);
         localDirection = Vector(localDirection.x, localDirection.z, localDirection.y);
@@ -167,6 +164,10 @@ public:
     }
 
     Spectrum Li(const RayDifferential &r, RadianceQueryRecord &rRec) const {
+        return Li(r, rRec, false);
+    }
+
+    Spectrum Li(const RayDifferential &r, RadianceQueryRecord &rRec, bool debugPixel) const {
         /* Some aliases and local variables */
         const Scene *scene = rRec.scene;
         Intersection &its = rRec.its;
@@ -258,7 +259,7 @@ public:
             BSDFSamplingRecord bRec(its, rRec.sampler, ERadiance);
 
             // Spectrum bsdfWeight = bsdf->sample(bRec, bsdfPdf, rRec.nextSample2D());
-            Spectrum bsdfWeight = neuralSample(bsdf, bRec, bsdfPdf);
+            Spectrum bsdfWeight = neuralSample(bsdf, bRec, bsdfPdf, debugPixel);
 
             if (bsdfWeight.isZero())
                 break;
@@ -377,7 +378,9 @@ public:
         for (size_t i = 0; i<points.size(); ++i) {
             Point2i offset = Point2i(points[i]) + Vector2i(block->getOffset());
 
+            bool debugPixel = false;
             if (m_x == offset.x && m_y == offset.y) {
+                debugPixel = true;
                 Log(EInfo, "Rendering Pixel (%i, %i)", m_x, m_y);
             } else {
                 continue;
@@ -402,7 +405,7 @@ public:
 
                 sensorRay.scaleDifferential(diffScaleFactor);
 
-                spec *= Li(sensorRay, rRec);
+                spec *= Li(sensorRay, rRec, debugPixel);
                 block->put(samplePos, spec, rRec.alpha);
                 sampler->advance();
             }
