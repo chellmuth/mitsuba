@@ -1,3 +1,6 @@
+#include "neural_pdf.h"
+#include "photon_bundle.h"
+
 #include <mitsuba/render/scene.h>
 #include <mitsuba/render/renderproc.h>
 #include <mitsuba/core/statistics.h>
@@ -10,12 +13,20 @@
 #include <mitsuba/render/photon.h>
 #include <mitsuba/render/photonmap.h>
 
-#include "neural_pdf.h"
-#include "photon_bundle.h"
+#include <cmath>
 
 MTS_NAMESPACE_BEGIN
 
 static StatsCounter avgPathLength("Path tracer", "Average path length", EAverage);
+
+static Vector sphericalToCartesian(float phi, float theta)
+{
+    const float y = cosf(theta);
+    const float x = sinf(theta) * cosf(phi);
+    const float z = sinf(theta) * sinf(phi);
+
+    return Vector3(x, y, z);
+}
 
 class NeuralIntegrator : public MonteCarloIntegrator {
 public:
@@ -123,7 +134,9 @@ public:
         float phi, theta, pdf2;
         m_neuralPDF.sample(&phi, &theta, &pdf2, photonBundle);
 
-        bRec.wo = Vector(1, 0, 0);
+        Vector localDirection = sphericalToCartesian(phi, theta);
+
+        bRec.wo = localDirection;
         bRec.eta = 1.f;
         bRec.sampledComponent = 0;
         bRec.sampledType = BSDF::EDiffuseReflection;
