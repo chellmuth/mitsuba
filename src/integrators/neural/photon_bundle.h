@@ -14,7 +14,7 @@ public:
     PhotonBundle(Point point, Frame frame, int phiSteps, int thetaSteps);
 
     void splat(const Photon &photon);
-    std::vector<Float> serializePDF();
+    std::vector<Float> serialized();
 
 private:
     const Point m_point;

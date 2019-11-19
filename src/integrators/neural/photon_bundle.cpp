@@ -24,17 +24,26 @@ PhotonBundle::PhotonBundle(Point point, Frame frame, int phiSteps, int thetaStep
     : m_point(point), m_frame(frame), m_phiSteps(phiSteps), m_thetaSteps(thetaSteps),
       m_massLookup(m_phiSteps * m_thetaSteps, 0.f), m_totalMass(0.f)
 {
-    std::cout << "PHOTON BUNDLE CONSTRUCTOR" << std::endl;
+    // std::cout << "PHOTON BUNDLE CONSTRUCTOR" << std::endl;
 }
 
 void PhotonBundle::splat(const Photon &photon)
 {
     Point source = photon.getSource();
-    Vector worldDirection = source - m_point;
-    Vector localDirection = m_frame.toLocal(worldDirection);
+    Vector worldDirection = normalize(source - m_point);
+    Vector localDirection = normalize(m_frame.toLocal(worldDirection));
 
     float phi, theta;
     cartesianToSpherical(localDirection, &phi, &theta);
+
+    if (std::isnan(theta)) {
+        std::cout << "Theta: " << theta << std::endl;
+        std::cout << "Position: " << m_point.toString() << std::endl;
+        std::cout << "Source: " << source.toString() << std::endl;
+        std::cout << "World Dir: " << worldDirection.toString() << std::endl;
+        std::cout << "Local Dir: " << localDirection.toString() << std::endl;
+        std::cout << "Phi: " << phi << std::endl;
+    }
 
     if (theta > M_PI / 2.f) { return; }
 
@@ -55,7 +64,7 @@ void PhotonBundle::splat(const Photon &photon)
     m_totalMass += mass;
 }
 
-std::vector<Float> PhotonBundle::serializePDF()
+std::vector<Float> PhotonBundle::serialized()
 {
     std::vector<Float> pdf(m_phiSteps * m_thetaSteps, 0.f);
 

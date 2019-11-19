@@ -116,33 +116,9 @@ public:
             const Photon &photon = photonMap[searchResult.index];
 
             bundle.splat(photon);
-
-            Point position = photon.getPosition();
-            Point source = photon.getSource();
-
-            float r, g, b;
-            Spectrum power = photon.getPower();
-            power.toLinearRGB(r, g, b);
-
-            float photonBuffer[] = {
-                position.x,
-                position.y,
-                position.z,
-
-                source.x,
-                source.y,
-                source.z,
-
-                r, g, b
-            };
-
-        //     std::cout << "PHOTON RECORD:" << std::endl;
-        //     std::cout << photon.getPosition().toString() << std::endl;
-        //     std::cout << photon.getSource().toString() << std::endl;
-        //     std::cout << photon.getPower().toString() << std::endl;
         }
 
-        std::vector<float> photonBundle(100, 0.f);
+        std::vector<float> photonBundle = bundle.serialized();
         float phi, theta, pdf2;
         m_neuralPDF.sample(&phi, &theta, &pdf2, photonBundle);
 
