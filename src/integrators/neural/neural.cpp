@@ -37,6 +37,15 @@ public:
     NeuralIntegrator(const Properties &props)
         : MonteCarloIntegrator(props), m_neuralPDF()
         {
+            m_x = props.getInteger("x");
+            m_y = props.getInteger("y");
+
+            if (m_x >= 0 && m_y >= 0) {
+                Log(EInfo, "Hunting pixel (%i, %i)", m_x, m_y);
+            } else {
+                Log(EInfo, "Full render");
+            }
+
             m_globalPhotons = props.getSize("globalPhotons", 10000);
         }
 
@@ -367,6 +376,13 @@ public:
 
         for (size_t i = 0; i<points.size(); ++i) {
             Point2i offset = Point2i(points[i]) + Vector2i(block->getOffset());
+
+            if (m_x == offset.x && m_y == offset.y) {
+                Log(EInfo, "Rendering Pixel (%i, %i)", m_x, m_y);
+            } else {
+                continue;
+            }
+
             if (stop)
                 break;
 
@@ -410,6 +426,7 @@ public:
     MTS_DECLARE_CLASS()
 
 private:
+    int m_x, m_y;
 
     ref<ParallelProcess> m_proc;
     ref<PhotonMap> m_globalPhotonMap;
