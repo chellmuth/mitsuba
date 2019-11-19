@@ -26,6 +26,7 @@ plugins += env.SharedLibrary('neural', [
     'neural/neural_pdf.cpp',
     'neural/photon_bundle.cpp',
     'neural/neural_frame.cpp',
+    'neural/neural_util.cpp'
 ])
 
 # Bidirectional techniques

@@ -1,5 +1,6 @@
 #include "neural_frame.h"
 #include "neural_pdf.h"
+#include "neural_util.h"
 #include "photon_bundle.h"
 
 #include <mitsuba/render/scene.h>
@@ -145,7 +146,8 @@ public:
         m_neuralPDF.sample(&phi, &theta, &pdf2, photonBundle);
 
         if (debugPixel) {
-            m_neuralPDF.batchEval(10, photonBundle);
+            std::vector<Float> batchedResult = m_neuralPDF.batchEval(10, photonBundle);
+            imageFromVector("out.exr", batchedResult);
         }
 
         Vector localDirection = sphericalToCartesian(phi, theta);
@@ -159,7 +161,7 @@ public:
         bRec.sampledComponent = 0;
         bRec.sampledType = BSDF::EDiffuseReflection;
 
-        pdf = bsdf->pdf(bRec);
+        pdf = pdf2;
         return bsdf->eval(bRec);
     }
 
