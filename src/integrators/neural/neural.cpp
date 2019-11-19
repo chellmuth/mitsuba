@@ -1,3 +1,4 @@
+#include "neural_frame.h"
 #include "neural_pdf.h"
 #include "photon_bundle.h"
 
@@ -113,7 +114,14 @@ public:
 
         size_t resultCount = m_globalPhotonMap->nnSearch(its.p, maxPhotons, results);
 
-        PhotonBundle bundle(its.p, its.shFrame, 10, 10);
+        bool flippedNormal = false;
+        Vector normal = its.shFrame.n;
+        if (Frame::cosTheta(bRec.wi) < 0.f) {
+            flippedNormal = true;
+            normal *= -1.f;
+        }
+        Frame neuralFrame = constructNeuralFrame(normal, its.wi);
+        PhotonBundle bundle(its.p, neuralFrame, 10, 10);
 
         // Log(EInfo, "Photons returned: %i", resultCount);
 
@@ -135,6 +143,7 @@ public:
         m_neuralPDF.sample(&phi, &theta, &pdf2, photonBundle);
 
         Vector localDirection = sphericalToCartesian(phi, theta);
+        localDirection = Vector(localDirection.x, localDirection.z, localDirection.y);
 
         bRec.wo = localDirection;
         bRec.eta = 1.f;

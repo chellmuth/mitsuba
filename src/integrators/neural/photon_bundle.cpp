@@ -37,6 +37,7 @@ void PhotonBundle::splat(const Photon &photon)
     cartesianToSpherical(localDirection, &phi, &theta);
 
     if (std::isnan(theta)) {
+    // if (true) {
         std::cout << "Theta: " << theta << std::endl;
         std::cout << "Position: " << m_point.toString() << std::endl;
         std::cout << "Source: " << source.toString() << std::endl;
@@ -45,7 +46,7 @@ void PhotonBundle::splat(const Photon &photon)
         std::cout << "Phi: " << phi << std::endl;
     }
 
-    if (theta > M_PI / 2.f) { return; }
+    if (theta >= M_PI / 2.f) { return; }
 
     const int phiStep = (int)floorf(phi / (M_TWO_PI / m_phiSteps));
     const int thetaStep = (int)floorf(theta / (M_PI / 2.f / m_thetaSteps));
