@@ -384,7 +384,7 @@ public:
             if (m_x == offset.x && m_y == offset.y) {
                 debugPixel = true;
                 Log(EInfo, "Rendering Pixel (%i, %i)", m_x, m_y);
-            } else {
+            } else if (m_x != -1 && m_y != -1) {
                 continue;
             }
 
