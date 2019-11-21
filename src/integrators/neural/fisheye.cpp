@@ -264,28 +264,12 @@ public:
 
         ref<Bitmap> bitmap = new Bitmap(Bitmap::ERGB, Bitmap::EUInt8, {phiSteps, thetaSteps});
 
-        const BSDF *bsdf = rRec.its.getBSDF(sensorRay);
-
-        Float bsdfPdf;
-        BSDFSamplingRecord bRec(rRec.its, rRec.sampler, ERadiance);
-        bsdf->sample(bRec, bsdfPdf, rRec.nextSample2D());
-
-        const Vector bsdfWo = rRec.its.toWorld(bRec.wo);
-        const Vector testWo = rRec.its.toWorld(Vector(0.f, 0.f, 1.f));
-
-        bool flipBounce = false;
-        if (dot(bsdfWo, testWo) < 0.f) {
-            flipBounce = true;
-        }
-
         bool flippedNormal = false;
         Vector normal = rRec.its.shFrame.n;
-        if (Frame::cosTheta(bRec.wi) < 0.f) {
+        if (Frame::cosTheta(rRec.its.wi) < 0.f) {
             flippedNormal = true;
             normal *= -1.f;
         }
-
-        assert(flippedNormal == flipBounce);
 
         Frame neuralFrame = constructNeuralFrame(normal, rRec.its.wi);
 
@@ -303,10 +287,6 @@ public:
                     Float sinPhi, cosPhi;
                     math::sincos(theta, &sinTheta, &cosTheta);
                     math::sincos(phi, &sinPhi, &cosPhi);
-
-                    if (flipBounce) {
-                        cosTheta *= -1.f;
-                    }
 
                     const Vector woLocal(cosPhi * sinTheta, cosTheta, sinPhi * sinTheta);
                     const Vector wo = neuralFrame.toWorld(woLocal);
@@ -331,7 +311,7 @@ public:
         film->setBitmap(bitmap);
         film->develop(scene, 0.f);
 
-        gatherPhotons(rRec.its, flipBounce, block, identifier);
+        gatherPhotons(rRec.its, flippedNormal, block, identifier);
     }
 
     void renderBlock(
