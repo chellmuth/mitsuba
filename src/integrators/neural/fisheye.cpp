@@ -8,6 +8,8 @@
 #include <mitsuba/render/photon.h>
 #include <mitsuba/render/photonmap.h>
 
+#include "neural_frame.h"
+
 MTS_NAMESPACE_BEGIN
 
 class FisheyeIntegrator : public SamplingIntegrator {
@@ -276,6 +278,17 @@ public:
             flipBounce = true;
         }
 
+        bool flippedNormal = false;
+        Vector normal = rRec.its.shFrame.n;
+        if (Frame::cosTheta(bRec.wi) < 0.f) {
+            flippedNormal = true;
+            normal *= -1.f;
+        }
+
+        assert(flippedNormal == flipBounce);
+
+        Frame neuralFrame = constructNeuralFrame(normal, rRec.its.wi);
+
         RadianceQueryRecord nestedRec(scene, sampler);
         for (int thetaStep = 0; thetaStep < thetaSteps; thetaStep++) {
             for (int phiStep = 0; phiStep < phiSteps; phiStep++) {
@@ -295,8 +308,8 @@ public:
                         cosTheta *= -1.f;
                     }
 
-                    const Vector woLocal(cosPhi * sinTheta, sinPhi * sinTheta, cosTheta);
-                    const Vector wo = rRec.its.toWorld(woLocal);
+                    const Vector woLocal(cosPhi * sinTheta, cosTheta, sinPhi * sinTheta);
+                    const Vector wo = neuralFrame.toWorld(woLocal);
 
                     // std::cout << "theta: " << thetaStep << " " << "phi: " << phiStep << std::endl;
                     // std::cout << woLocal.toString() << std::endl;
