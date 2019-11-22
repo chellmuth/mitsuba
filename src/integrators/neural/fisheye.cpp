@@ -172,7 +172,7 @@ public:
 
         std::ostringstream oss;
         if (identifier < 0) {
-            oss << "photons.bin";
+            oss << "photons_" << m_x << "_" << m_y << ".bin";
         } else {
             auto offset = Vector2i(block->getOffset());
             oss << "results/photons_" << identifier << "-block_" << offset.x << "x" << offset.y << ".bin";

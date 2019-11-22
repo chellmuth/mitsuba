@@ -146,8 +146,11 @@ public:
         m_neuralPDF.sample(&phi, &theta, &pdf2, photonBundle);
 
         if (debugPixel) {
+            std::ostringstream oss;
+            oss << "batch_" << m_x << "_" << m_y << ".exr";
+
             std::vector<Float> batchedResult = m_neuralPDF.batchEval(400, photonBundle);
-            imageFromVector("batch.exr", batchedResult);
+            imageFromVector(oss.str(), batchedResult);
         }
 
         Vector localDirection = sphericalToCartesian(phi, theta);
