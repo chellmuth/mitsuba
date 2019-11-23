@@ -118,6 +118,9 @@ public:
     Spectrum neuralSample(const BSDF *bsdf, BSDFSamplingRecord &bRec, Float &pdf, bool debugPixel) const {
         const Intersection &its = bRec.its;
 
+        std::cout << "INTERSECTION:" << std::endl;
+        std::cout << its.toString() << std::endl;
+
         const size_t maxPhotons = 100;
         SearchResult *results = static_cast<SearchResult *>(
             alloca((maxPhotons + 1) * sizeof(SearchResult)));
@@ -274,7 +277,7 @@ public:
             BSDFSamplingRecord bRec(its, rRec.sampler, ERadiance);
 
             // Spectrum bsdfWeight = bsdf->sample(bRec, bsdfPdf, rRec.nextSample2D());
-            Spectrum bsdfWeight = neuralSample(bsdf, bRec, bsdfPdf, debugPixel);
+            Spectrum bsdfWeight = neuralSample(bsdf, bRec, bsdfPdf, debugPixel && rRec.depth == 1);
 
             if (bsdfWeight.isZero())
                 break;

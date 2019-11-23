@@ -8,6 +8,7 @@
 #include <mitsuba/render/photon.h>
 #include <mitsuba/render/photonmap.h>
 
+#include "photon_bundle.h"
 #include "neural_frame.h"
 
 MTS_NAMESPACE_BEGIN
@@ -153,11 +154,13 @@ public:
     }
 
     void gatherPhotons(
-        const Intersection &its,
+        const RadianceQueryRecord &rRec,
         bool flipNormal,
         const ImageBlock *block = nullptr,
         const int identifier = -1
     ) const {
+        const Intersection &its = rRec.its;
+
         const size_t maxPhotons = 100;
         SearchResult *results = static_cast<SearchResult *>(
             alloca((maxPhotons + 1) * sizeof(SearchResult)));
@@ -229,6 +232,35 @@ public:
         }
 
         fileStream->close();
+
+        // {
+        //     std::cout << "INTERSECTION:" << std::endl;
+        //     std::cout << its.toString() << std::endl;
+
+        //     Vector normal = its.shFrame.n;
+        //     if (flipNormal) {
+        //         normal *= -1.f;
+        //     }
+        //     Frame neuralFrame = constructNeuralFrame(normal, its.wi);
+        //     PhotonBundle bundle(its.p, neuralFrame, 10, 10);
+
+        //     for (size_t i = 0; i < resultCount; i++) {
+        //         const SearchResult &searchResult = results[i];
+        //         const PhotonMap &photonMap = (*m_globalPhotonMap.get());
+        //         const Photon &photon = photonMap[searchResult.index];
+
+        //         bundle.splat(photon);
+        //     }
+
+        //     std::vector<Float> photonBundle = bundle.serialized();
+
+        //     std::ostringstream oss;
+        //     oss << "grid_" << m_x << "_" << m_y << ".bin";
+
+        //     ref<FileStream> fileStream = new FileStream(oss.str(), FileStream::ETruncWrite);
+        //     fileStream->write(photonBundle.data(), sizeof(float) * 100);
+        //     fileStream->close();
+        // }
     }
 
     void renderFisheye(
@@ -311,7 +343,7 @@ public:
         film->setBitmap(bitmap);
         film->develop(scene, 0.f);
 
-        gatherPhotons(rRec.its, flippedNormal, block, identifier);
+        gatherPhotons(rRec, flippedNormal, block, identifier);
     }
 
     void renderBlock(
