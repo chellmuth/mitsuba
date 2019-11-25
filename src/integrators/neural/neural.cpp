@@ -118,8 +118,8 @@ public:
     Spectrum neuralSample(const BSDF *bsdf, BSDFSamplingRecord &bRec, Float &pdf, bool debugPixel) const {
         const Intersection &its = bRec.its;
 
-        std::cout << "INTERSECTION:" << std::endl;
-        std::cout << its.toString() << std::endl;
+        // std::cout << "INTERSECTION:" << std::endl;
+        // std::cout << its.toString() << std::endl;
 
         const size_t maxPhotons = 100;
         SearchResult *results = static_cast<SearchResult *>(
@@ -167,10 +167,18 @@ public:
         }
 
         Vector localDirection = sphericalToCartesian(phi, theta);
+        // std::cout << "PHI: " << phi << " THETA: " << theta << std::endl;
+        // std::cout << "MY FORMAT: " << localDirection.toString() << std::endl;
         localDirection = Vector(localDirection.x, localDirection.z, localDirection.y);
+        // std::cout << "MITSUBA FORMAT: " << localDirection.toString() << std::endl;
+
         if (flippedNormal) {
+            // std::cout << "FLIPPING NORMAL" << std::endl;
             localDirection.z *= -1.f;
         }
+
+        // std::cout << "FLIPPED MITSUBA: " << localDirection.toString() << std::endl;
+        // std::cout << "PDF: " << pdf2 << std::endl;
 
         bRec.wo = localDirection;
         bRec.eta = 1.f;
@@ -264,6 +272,8 @@ public:
                         /* Weight using the power heuristic */
                         Float weight = miWeight(dRec.pdf, bsdfPdf);
                         Li += throughput * value * bsdfVal * weight;
+
+                        // std::cout << "EMITTER HIT!" << std::endl;
                     }
                 }
             }
@@ -278,6 +288,16 @@ public:
 
             // Spectrum bsdfWeight = bsdf->sample(bRec, bsdfPdf, rRec.nextSample2D());
             Spectrum bsdfWeight = neuralSample(bsdf, bRec, bsdfPdf, debugPixel && rRec.depth == 1);
+            // for (int i = 0; i < 20; i++) {
+            //      bsdfWeight = neuralSample(bsdf, bRec, bsdfPdf, debugPixel && rRec.depth == 1);
+            //      const Vector wo = its.toWorld(bRec.wo);
+            //      ray = Ray(its.p, wo, ray.time);
+            //      if (scene->rayIntersect(ray, its)) {
+            //          std::cout << "HIT!" << std::endl;
+            //      } else {
+            //          std::cout << "MISS!" << std::endl;
+            //      }
+            // }
 
             if (bsdfWeight.isZero())
                 break;
@@ -296,6 +316,7 @@ public:
             /* Trace a ray in this direction */
             ray = Ray(its.p, wo, ray.time);
             if (scene->rayIntersect(ray, its)) {
+                // std::cout << "HIT!" << std::endl;
                 /* Intersected something - check if it was a luminaire */
                 if (its.isEmitter()) {
                     value = its.Le(-ray.d);
@@ -303,6 +324,7 @@ public:
                     hitEmitter = true;
                 }
             } else {
+                // std::cout << "MISSED INTERSECTION!" << std::endl;
                 /* Intersected nothing -- perhaps there is an environment map? */
                 const Emitter *env = scene->getEnvironmentEmitter();
 
