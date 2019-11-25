@@ -21,6 +21,8 @@ MTS_NAMESPACE_BEGIN
 
 static StatsCounter avgPathLength("Path tracer", "Average path length", EAverage);
 
+static const float M_TWO_PI = M_PI * 2.f;
+
 static Vector sphericalToCartesian(float phi, float theta)
 {
     const float y = cosf(theta);
@@ -28,6 +30,19 @@ static Vector sphericalToCartesian(float phi, float theta)
     const float z = sinf(theta) * sinf(phi);
 
     return Vector3(x, y, z);
+}
+
+static void cartesianToSpherical(Vector cartesian, float *phi, float *theta)
+{
+    *phi = atan2f(cartesian.z, cartesian.x);
+    if (*phi < 0.f) {
+        *phi += 2 * M_PI;
+    }
+    if (*phi == M_TWO_PI) {
+        *phi = 0;
+    }
+
+    *theta = acosf(cartesian.y);
 }
 
 class NeuralIntegrator : public MonteCarloIntegrator {
@@ -113,6 +128,43 @@ public:
         }
 
         return true;
+    }
+
+    float neuralPdf(BSDFSamplingRecord &bRec) const {
+        const Intersection &its = bRec.its;
+
+        const size_t maxPhotons = 100;
+        SearchResult *results = static_cast<SearchResult *>(
+            alloca((maxPhotons + 1) * sizeof(SearchResult)));
+
+        size_t resultCount = m_globalPhotonMap->nnSearch(its.p, maxPhotons, results);
+
+        bool flippedNormal = false;
+        Vector normal = its.shFrame.n;
+        if (Frame::cosTheta(bRec.wi) < 0.f) {
+            flippedNormal = true;
+            normal *= -1.f;
+        }
+        Frame neuralFrame = constructNeuralFrame(normal, its.wi);
+        PhotonBundle bundle(its.p, neuralFrame, 10, 10);
+
+        for (size_t i = 0; i < resultCount; i++) {
+            const SearchResult &searchResult = results[i];
+            const PhotonMap &photonMap = (*m_globalPhotonMap.get());
+            const Photon &photon = photonMap[searchResult.index];
+
+            bundle.splat(photon);
+        }
+
+        std::vector<Float> photonBundle = bundle.serialized();
+
+        const Vector wo = bRec.wo;
+        const Vector cartesian = Vector(wo.x, flippedNormal ? -wo.z : wo.z, wo.y);
+
+        float phi, theta;
+        cartesianToSpherical(cartesian, &phi, &theta);
+
+        return m_neuralPDF.pdf(phi, theta, photonBundle);
     }
 
     Spectrum neuralSample(const BSDF *bsdf, BSDFSamplingRecord &bRec, Float &pdf, bool debugPixel) const {
@@ -266,8 +318,10 @@ public:
 
                         /* Calculate prob. of having generated that direction
                            using BSDF sampling */
+                        // Float bsdfPdf = (emitter->isOnSurface() && dRec.measure == ESolidAngle)
+                        //     ? bsdf->pdf(bRec) : 0;
                         Float bsdfPdf = (emitter->isOnSurface() && dRec.measure == ESolidAngle)
-                            ? bsdf->pdf(bRec) : 0;
+                            ? neuralPdf(bRec) : 0;
 
                         /* Weight using the power heuristic */
                         Float weight = miWeight(dRec.pdf, bsdfPdf);

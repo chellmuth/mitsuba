@@ -72,6 +72,26 @@ void NeuralPDF::sample(float *phi, float *theta, float *pdf, std::vector<float> 
     // printf("(%f %f %f) (%f %f)\n", *phi, *theta, *pdf, buffer[0], buffer[1]);
 }
 
+float NeuralPDF::pdf(float phi, float theta, std::vector<float> &photonBundle) const
+{
+    const int count = 1;
+    int hello[] = { 2, count };
+    send(m_socket, &hello, sizeof(int) * 2, 0);
+
+    float coordinates[] = { phi, theta };
+    send(m_socket, &coordinates, sizeof(float) * 2, 0);
+
+    float *photonData = photonBundle.data();
+    send(m_socket, photonData, sizeof(float) * photonBundle.size(), 0);
+
+    float buffer[1] = {0.f};
+    int bytesRead = recv(m_socket, buffer, sizeof(buffer), 0);
+
+    assert(bytesRead == sizeof(float) * 1);
+
+    return buffer[0];
+}
+
 std::vector<Float> NeuralPDF::batchEval(int size, std::vector<Float> photonBundle) const
 {
     const int count = size * size;
