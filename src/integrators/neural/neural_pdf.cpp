@@ -89,7 +89,7 @@ float NeuralPDF::pdf(float phi, float theta, std::vector<float> &photonBundle) c
 
     assert(bytesRead == sizeof(float) * 1);
 
-    return buffer[0];
+    return buffer[0] / sinf(theta) / (M_TWO_PI * M_PI / 2.f);
 }
 
 std::vector<Float> NeuralPDF::batchEval(int size, std::vector<Float> photonBundle) const
