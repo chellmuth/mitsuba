@@ -60,6 +60,7 @@ void NeuralPDF::sample(float *phi, float *theta, float *pdf, std::vector<float> 
     *phi = buffer[0] * M_TWO_PI;
     // *theta = (1.f - buffer[1]) * (M_PI / 2.f);
     *theta = buffer[1] * (M_PI / 2.f);
+    // std::cout << "PDF: " << buffer[2] << std::endl;
     *pdf = buffer[2] / sinf(*theta) / (M_TWO_PI * M_PI / 2.f);
 
     if (*phi < 0 || *phi > M_TWO_PI || *theta < 0 || *theta > (M_PI/2.f) || *pdf < 0) {
