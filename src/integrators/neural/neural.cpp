@@ -160,10 +160,12 @@ public:
         std::vector<Float> photonBundle = bundle.serialized();
 
         const Vector wo = bRec.wo;
-        const Vector cartesian = Vector(wo.x, fabsf(wo.z), wo.y);
+        const Vector woWorld = bRec.its.toWorld(bRec.wo);
+
+        const Vector woNeural = neuralFrame.toLocal(woWorld);
 
         float phi, theta;
-        cartesianToSpherical(cartesian, &phi, &theta);
+        cartesianToSpherical(woNeural, &phi, &theta);
 
         // return fabs(warp::squareToCosineHemispherePdf(bRec.wo));
 
