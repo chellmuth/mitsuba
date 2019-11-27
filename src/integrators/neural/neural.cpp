@@ -164,9 +164,9 @@ public:
         float phi, theta;
         cartesianToSpherical(cartesian, &phi, &theta);
 
-        return fabs(warp::squareToCosineHemispherePdf(bRec.wo));
+        // return fabs(warp::squareToCosineHemispherePdf(bRec.wo));
 
-        // return m_neuralPDF.pdf(phi, theta, photonBundle);
+        return m_neuralPDF.pdf(phi, theta, photonBundle);
     }
 
     Spectrum neuralSample(const BSDF *bsdf, BSDFSamplingRecord &bRec, Float &pdf, const Point2 &sample, bool debugPixel) const {
@@ -228,7 +228,7 @@ public:
 
         if (flippedNormal) {
             std::cout << "(FLIPPING NORMAL)" << std::endl;
-            localDirection.z *= -1.f;
+            // localDirection.z *= -1.f;
         }
 
         // std::cout << "FLIPPED MITSUBA: " << localDirection.toString() << std::endl;
@@ -242,9 +242,9 @@ public:
         // Spectrum result = bsdf->eval(bRec);
         // pdf = pdf2;
 
-        bRec.wo = warp::squareToCosineHemisphere(sample);
+        bRec.wo = localDirection;
         Spectrum result = bsdf->eval(bRec);
-        pdf = warp::squareToCosineHemispherePdf(bRec.wo);
+        pdf = pdf2;
 
         if (flippedNormal) {
             bRec.wo.z *= -1.f;
@@ -320,8 +320,7 @@ public:
             DirectSamplingRecord dRec(its);
 
             if (rRec.type & RadianceQueryRecord::EDirectSurfaceRadiance &&
-                (bsdf->getType() & BSDF::ESmooth) &&
-                rRec.depth > 1) {
+                (bsdf->getType() & BSDF::ESmooth)/* && rRec.depth > 1*/) {
                 Spectrum value = scene->sampleEmitterDirect(dRec, rRec.nextSample2D());
                 if (!value.isZero()) {
                     const Emitter *emitter = static_cast<const Emitter *>(dRec.object);
@@ -363,28 +362,28 @@ public:
             const Point2 &sample = rRec.nextSample2D();
             int sampledComponent;
 
-            {
-                BSDFSamplingRecord bRec(its, rRec.sampler, ERadiance);
-                std::cout << "==============" << std::endl;
-                Spectrum bsdfWeight = bsdf->sample(bRec, bsdfPdf, sample);
-                std::cout << bRec.toString() << std::endl;
-                std::cout << bsdfPdf << std::endl;
-                std::cout << bsdfWeight.toString() << std::endl;
-                bRec.wi.z *= -1.f;
-                bRec.wo.z *= -1.f;
-                std::cout << (bsdf->eval(bRec) / bsdfPdf).toString() << std::endl;
+            // {
+            //     BSDFSamplingRecord bRec(its, rRec.sampler, ERadiance);
+            //     std::cout << "==============" << std::endl;
+            //     Spectrum bsdfWeight = bsdf->sample(bRec, bsdfPdf, sample);
+            //     std::cout << bRec.toString() << std::endl;
+            //     std::cout << bsdfPdf << std::endl;
+            //     std::cout << bsdfWeight.toString() << std::endl;
+            //     bRec.wi.z *= -1.f;
+            //     bRec.wo.z *= -1.f;
+            //     std::cout << (bsdf->eval(bRec) / bsdfPdf).toString() << std::endl;
 
-                sampledComponent = bRec.sampledComponent;
-            }
-            {
-                BSDFSamplingRecord bRec(its, rRec.sampler, ERadiance);
-                Spectrum bsdfWeight = neuralSample(bsdf, bRec, bsdfPdf, sample, debugPixel && rRec.depth == 1);
-                bRec.sampledComponent = sampledComponent;
-                std::cout << bRec.toString() << std::endl;
-                std::cout << bsdfPdf << std::endl;
-                std::cout << bsdfWeight.toString() << std::endl;
-                std::cout << (bsdf->eval(bRec) / bsdfPdf).toString() << std::endl;
-            }
+            //     sampledComponent = bRec.sampledComponent;
+            // }
+            // {
+            //     BSDFSamplingRecord bRec(its, rRec.sampler, ERadiance);
+            //     Spectrum bsdfWeight = neuralSample(bsdf, bRec, bsdfPdf, sample, debugPixel && rRec.depth == 1);
+            //     bRec.sampledComponent = sampledComponent;
+            //     std::cout << bRec.toString() << std::endl;
+            //     std::cout << bsdfPdf << std::endl;
+            //     std::cout << bsdfWeight.toString() << std::endl;
+            //     std::cout << (bsdf->eval(bRec) / bsdfPdf).toString() << std::endl;
+            // }
 
             BSDFSamplingRecord bRec(its, rRec.sampler, ERadiance);
             Spectrum bsdfWeight = neuralSample(bsdf, bRec, bsdfPdf, sample, debugPixel && rRec.depth == 1);

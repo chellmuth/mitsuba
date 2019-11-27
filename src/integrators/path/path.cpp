@@ -172,8 +172,7 @@ public:
             DirectSamplingRecord dRec(its);
 
             if (rRec.type & RadianceQueryRecord::EDirectSurfaceRadiance &&
-                (bsdf->getType() & BSDF::ESmooth) &&
-                rRec.depth > 1) {
+                (bsdf->getType() & BSDF::ESmooth) /*&& rRec.depth > 1*/) {
                 Spectrum value = scene->sampleEmitterDirect(dRec, rRec.nextSample2D());
                 if (!value.isZero()) {
                     const Emitter *emitter = static_cast<const Emitter *>(dRec.object);
