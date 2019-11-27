@@ -145,6 +145,7 @@ public:
             flippedNormal = true;
             normal *= -1.f;
         }
+
         Frame neuralFrame = constructNeuralFrame(normal, its.wi);
         PhotonBundle bundle(its.p, neuralFrame, 10, 10);
 
@@ -159,14 +160,15 @@ public:
         std::vector<Float> photonBundle = bundle.serialized();
 
         const Vector wo = bRec.wo;
-        const Vector cartesian = Vector(wo.x, flippedNormal ? -wo.z : wo.z, wo.y);
+        const Vector cartesian = Vector(wo.x, fabsf(wo.z), wo.y);
 
         float phi, theta;
         cartesianToSpherical(cartesian, &phi, &theta);
 
         // return fabs(warp::squareToCosineHemispherePdf(bRec.wo));
 
-        return m_neuralPDF.pdf(phi, theta, photonBundle);
+        float pdf = m_neuralPDF.pdf(phi, theta, photonBundle);
+        return pdf;
     }
 
     Spectrum neuralSample(const BSDF *bsdf, BSDFSamplingRecord &bRec, Float &pdf, const Point2 &sample, bool debugPixel) const {
@@ -218,12 +220,13 @@ public:
                 fileStream->write(photonBundle.data(), sizeof(float) * 100);
                 fileStream->close();
             }
+            std::cout << "Phi: " << phi << " " << "Theta: " << theta << std::endl;
         }
 
         Vector localDirection = sphericalToCartesian(phi, theta);
         // std::cout << "PHI: " << phi << " THETA: " << theta << std::endl;
         // std::cout << "MY FORMAT: " << localDirection.toString() << std::endl;
-        localDirection = Vector(localDirection.x, localDirection.z, localDirection.y);
+        // localDirection = Vector(localDirection.x, localDirection.z, localDirection.y);
         // std::cout << "MITSUBA FORMAT: " << localDirection.toString() << std::endl;
 
         if (flippedNormal) {
@@ -242,14 +245,31 @@ public:
         // Spectrum result = bsdf->eval(bRec);
         // pdf = pdf2;
 
-        bRec.wo = localDirection;
+        Vector woWorld = neuralFrame.toWorld(localDirection);
+        // woWorld = Vector(woWorld.x, woWorld.z, woWorld.y);
+
+        bRec.wo = its.toLocal(woWorld);
+
         Spectrum result = bsdf->eval(bRec);
+        if (debugPixel) {
+            std::cout << "RESULT: " << result.toString() << std::endl;
+            std::cout << "LOCAL: " << localDirection.toString() << std::endl;
+            std::cout << "WORLD: " << woWorld.toString() << " (" << its.toWorld(bRec.wo).toString() << ")" << std::endl;
+            std::cout << "WI: " << bRec.wi.toString() << std::endl;
+            std::cout << "WO: " << bRec.wo.toString() << std::endl;
+            std::cout << "========" << std::endl;
+        }
         pdf = pdf2;
 
         if (flippedNormal) {
             bRec.wo.z *= -1.f;
             bRec.wi.z *= -1.f;
         }
+
+        // if (debugPixel) {
+        //     std::cout << "WO AND WI " << bRec.wo.toString() << " " << bRec.wi.toString() << std::endl;
+        // }
+
         // bRec.wo = localDirection;
         bRec.eta = 1.f;
         bRec.sampledComponent = 0;
@@ -341,7 +361,6 @@ public:
                         //     ? bsdf->pdf(bRec) : 0;
                         Float bsdfPdf = (emitter->isOnSurface() && dRec.measure == ESolidAngle)
                             ? neuralPdf(bRec) : 0;
-                        std::cout << "negative? " << bsdfPdf << std::endl;
 
                         /* Weight using the power heuristic */
                         Float weight = miWeight(dRec.pdf, bsdfPdf);
@@ -390,14 +409,16 @@ public:
 
             // std::cout << "bsdfpdf: " << bsdfPdf << std::endl;
             // for (int i = 0; i < 20; i++) {
-            //      bsdfWeight = neuralSample(bsdf, bRec, bsdfPdf, debugPixel && rRec.depth == 1);
-            //      const Vector wo = its.toWorld(bRec.wo);
-            //      ray = Ray(its.p, wo, ray.time);
-            //      if (scene->rayIntersect(ray, its)) {
-            //          std::cout << "HIT!" << std::endl;
-            //      } else {
-            //          std::cout << "MISS!" << std::endl;
-            //      }
+            //     BSDFSamplingRecord fakeBRec(its, rRec.sampler, ERadiance);
+            //     Float fakePDF;
+            //     Spectrum fake = neuralSample(bsdf, fakeBRec, fakePDF, sample, debugPixel && rRec.depth == 1);
+            //     const Vector wo = its.toWorld(bRec.wo);
+            //     ray = Ray(its.p, wo, ray.time);
+            //     if (scene->rayIntersect(ray, its)) {
+            //         std::cout << "HIT!" << std::endl;
+            //     } else {
+            //         std::cout << "MISS!" << std::endl;
+            //     }
             // }
 
             if (bsdfWeight.isZero())
