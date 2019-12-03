@@ -294,7 +294,7 @@ public:
         }
         film->setDestinationFile(oss.str(), 0);
 
-        ref<Bitmap> bitmap = new Bitmap(Bitmap::ERGB, Bitmap::EUInt8, {phiSteps, thetaSteps});
+        ref<Bitmap> bitmap = new Bitmap(Bitmap::ERGB, Bitmap::EFloat32, {phiSteps, thetaSteps});
 
         bool flippedNormal = false;
         Vector normal = rRec.its.shFrame.n;
