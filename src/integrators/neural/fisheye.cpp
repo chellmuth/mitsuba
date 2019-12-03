@@ -406,7 +406,9 @@ public:
 
             rRec.rayIntersect(sensorRay);
 
-            renderFisheye(scene, sensor, sampler, rRec, sensorRay, block, i);
+            if (rRec.its.isValid()) {
+                renderFisheye(scene, sensor, sampler, rRec, sensorRay, block, i);
+            }
         }
 
     }
