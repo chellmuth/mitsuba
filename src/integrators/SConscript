@@ -23,12 +23,14 @@ plugins += env.SharedLibrary('motion', ['misc/motion.cpp'])
 plugins += env.SharedLibrary('fisheye', [
     'neural/fisheye.cpp',
     'neural/neural_frame.cpp',
-    'neural/photon_bundle.cpp'
+    'neural/photon_bundle.cpp',
+    'neural/photon_helper.cpp'
 ])
 plugins += env.SharedLibrary('neural', [
     'neural/neural.cpp',
     'neural/neural_pdf.cpp',
     'neural/photon_bundle.cpp',
+    'neural/photon_helper.cpp',
     'neural/neural_frame.cpp',
     'neural/neural_util.cpp'
 ])

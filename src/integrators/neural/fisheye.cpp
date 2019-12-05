@@ -8,8 +8,9 @@
 #include <mitsuba/render/photon.h>
 #include <mitsuba/render/photonmap.h>
 
-#include "photon_bundle.h"
 #include "neural_frame.h"
+#include "photon_bundle.h"
+#include "photon_helper.h"
 
 MTS_NAMESPACE_BEGIN
 
@@ -153,115 +154,115 @@ public:
         return proc->getReturnStatus() == ParallelProcess::ESuccess;
     }
 
-    void gatherPhotons(
-        const RadianceQueryRecord &rRec,
-        bool flipNormal,
-        const ImageBlock *block = nullptr,
-        const int identifier = -1
-    ) const {
-        const Intersection &its = rRec.its;
+    // void gatherPhotons(
+    //     const RadianceQueryRecord &rRec,
+    //     bool flipNormal,
+    //     const ImageBlock *block = nullptr,
+    //     const int identifier = -1
+    // ) const {
+    //     const Intersection &its = rRec.its;
 
-        const size_t maxPhotons = 100;
-        SearchResult *results = static_cast<SearchResult *>(
-            alloca((maxPhotons + 1) * sizeof(SearchResult)));
+    //     const size_t maxPhotons = 100;
+    //     SearchResult *results = static_cast<SearchResult *>(
+    //         alloca((maxPhotons + 1) * sizeof(SearchResult)));
 
-        size_t resultCount = m_globalPhotonMap->nnSearch(its.p, maxPhotons, results);
-        // Log(EInfo, "Photons returned: %i", resultCount);
+    //     size_t resultCount = m_globalPhotonMap->nnSearch(its.p, maxPhotons, results);
+    //     // Log(EInfo, "Photons returned: %i", resultCount);
 
-        // std::cout << "INTERSECTION RECORD:" << std::endl;
-        // std::cout << its.p.toString() << std::endl;
-        // std::cout << its.geoFrame.n.toString() << std::endl;
-        // std::cout << its.wi.toString() << std::endl;
+    //     // std::cout << "INTERSECTION RECORD:" << std::endl;
+    //     // std::cout << its.p.toString() << std::endl;
+    //     // std::cout << its.geoFrame.n.toString() << std::endl;
+    //     // std::cout << its.wi.toString() << std::endl;
 
-        std::ostringstream oss;
-        if (identifier < 0) {
-            oss << "photons_" << m_x << "_" << m_y << ".bin";
-        } else {
-            auto offset = Vector2i(block->getOffset());
-            oss << "results/photons_" << identifier << "-block_" << offset.x << "x" << offset.y << ".bin";
-        }
+    //     std::ostringstream oss;
+    //     if (identifier < 0) {
+    //         oss << "photons_" << m_x << "_" << m_y << ".bin";
+    //     } else {
+    //         auto offset = Vector2i(block->getOffset());
+    //         oss << "results/photons_" << identifier << "-block_" << offset.x << "x" << offset.y << ".bin";
+    //     }
 
-        ref<FileStream> fileStream = new FileStream(oss.str(), FileStream::ETruncWrite);
+    //     ref<FileStream> fileStream = new FileStream(oss.str(), FileStream::ETruncWrite);
 
-        float intersectionBuffer[] = {
-            its.p.x,
-            its.p.y,
-            its.p.z,
-            its.shFrame.n.x * (flipNormal ? -1.f : 1.f),
-            its.shFrame.n.y * (flipNormal ? -1.f : 1.f),
-            its.shFrame.n.z * (flipNormal ? -1.f : 1.f),
-            its.wi.x,
-            its.wi.y,
-            its.wi.z,
-        };
-        fileStream->write(&intersectionBuffer, 9 * sizeof(float));
+    //     float intersectionBuffer[] = {
+    //         its.p.x,
+    //         its.p.y,
+    //         its.p.z,
+    //         its.shFrame.n.x * (flipNormal ? -1.f : 1.f),
+    //         its.shFrame.n.y * (flipNormal ? -1.f : 1.f),
+    //         its.shFrame.n.z * (flipNormal ? -1.f : 1.f),
+    //         its.wi.x,
+    //         its.wi.y,
+    //         its.wi.z,
+    //     };
+    //     fileStream->write(&intersectionBuffer, 9 * sizeof(float));
 
-        uint32_t countBuffer = resultCount;
-        fileStream->write(&countBuffer, sizeof(uint32_t));
+    //     uint32_t countBuffer = resultCount;
+    //     fileStream->write(&countBuffer, sizeof(uint32_t));
 
-        for (size_t i = 0; i < resultCount; i++) {
-            const SearchResult &searchResult = results[i];
-            const PhotonMap &photonMap = (*m_globalPhotonMap.get());
-            const Photon &photon = photonMap[searchResult.index];
+    //     for (size_t i = 0; i < resultCount; i++) {
+    //         const SearchResult &searchResult = results[i];
+    //         const PhotonMap &photonMap = (*m_globalPhotonMap.get());
+    //         const Photon &photon = photonMap[searchResult.index];
 
-            Point position = photon.getPosition();
-            Point source = photon.getSource();
+    //         Point position = photon.getPosition();
+    //         Point source = photon.getSource();
 
-            float r, g, b;
-            Spectrum power = photon.getPower();
-            power.toLinearRGB(r, g, b);
+    //         float r, g, b;
+    //         Spectrum power = photon.getPower();
+    //         power.toLinearRGB(r, g, b);
 
-            float photonBuffer[] = {
-                position.x,
-                position.y,
-                position.z,
+    //         float photonBuffer[] = {
+    //             position.x,
+    //             position.y,
+    //             position.z,
 
-                source.x,
-                source.y,
-                source.z,
+    //             source.x,
+    //             source.y,
+    //             source.z,
 
-                r, g, b
-            };
+    //             r, g, b
+    //         };
 
-            fileStream->write(photonBuffer, sizeof(float) * 9);
+    //         fileStream->write(photonBuffer, sizeof(float) * 9);
 
-        //     std::cout << "PHOTON RECORD:" << std::endl;
-        //     std::cout << photon.getPosition().toString() << std::endl;
-        //     std::cout << photon.getSource().toString() << std::endl;
-        //     std::cout << photon.getPower().toString() << std::endl;
-        }
+    //     //     std::cout << "PHOTON RECORD:" << std::endl;
+    //     //     std::cout << photon.getPosition().toString() << std::endl;
+    //     //     std::cout << photon.getSource().toString() << std::endl;
+    //     //     std::cout << photon.getPower().toString() << std::endl;
+    //     }
 
-        fileStream->close();
+    //     fileStream->close();
 
-        // {
-        //     std::cout << "INTERSECTION:" << std::endl;
-        //     std::cout << its.toString() << std::endl;
+    //     // {
+    //     //     std::cout << "INTERSECTION:" << std::endl;
+    //     //     std::cout << its.toString() << std::endl;
 
-        //     Vector normal = its.shFrame.n;
-        //     if (flipNormal) {
-        //         normal *= -1.f;
-        //     }
-        //     Frame neuralFrame = constructNeuralFrame(normal, its);
-        //     PhotonBundle bundle(its.p, neuralFrame, 10, 10);
+    //     //     Vector normal = its.shFrame.n;
+    //     //     if (flipNormal) {
+    //     //         normal *= -1.f;
+    //     //     }
+    //     //     Frame neuralFrame = constructNeuralFrame(normal, its);
+    //     //     PhotonBundle bundle(its.p, neuralFrame, 10, 10);
 
-        //     for (size_t i = 0; i < resultCount; i++) {
-        //         const SearchResult &searchResult = results[i];
-        //         const PhotonMap &photonMap = (*m_globalPhotonMap.get());
-        //         const Photon &photon = photonMap[searchResult.index];
+    //     //     for (size_t i = 0; i < resultCount; i++) {
+    //     //         const SearchResult &searchResult = results[i];
+    //     //         const PhotonMap &photonMap = (*m_globalPhotonMap.get());
+    //     //         const Photon &photon = photonMap[searchResult.index];
 
-        //         bundle.splat(photon);
-        //     }
+    //     //         bundle.splat(photon);
+    //     //     }
 
-        //     std::vector<Float> photonBundle = bundle.serialized();
+    //     //     std::vector<Float> photonBundle = bundle.serialized();
 
-        //     std::ostringstream oss;
-        //     oss << "grid_" << m_x << "_" << m_y << ".bin";
+    //     //     std::ostringstream oss;
+    //     //     oss << "grid_" << m_x << "_" << m_y << ".bin";
 
-        //     ref<FileStream> fileStream = new FileStream(oss.str(), FileStream::ETruncWrite);
-        //     fileStream->write(photonBundle.data(), sizeof(float) * 100);
-        //     fileStream->close();
-        // }
-    }
+    //     //     ref<FileStream> fileStream = new FileStream(oss.str(), FileStream::ETruncWrite);
+    //     //     fileStream->write(photonBundle.data(), sizeof(float) * 100);
+    //     //     fileStream->close();
+    //     // }
+    // }
 
     void renderFisheye(
         const Scene *scene,
@@ -343,7 +344,7 @@ public:
         film->setBitmap(bitmap);
         film->develop(scene, 0.f);
 
-        gatherPhotons(rRec, flippedNormal, block, identifier);
+        gatherPhotons(m_globalPhotonMap, m_x, m_y, rRec, flippedNormal, block, identifier);
     }
 
     void renderBlock(
