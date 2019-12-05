@@ -2,9 +2,11 @@
 
 MTS_NAMESPACE_BEGIN
 
-Frame constructNeuralFrame(Vector normal, Vector wi)
+Frame constructNeuralFrame(const Vector &normal, const Intersection &its)
 {
-    Vector xAxis = normalize(cross(normal, wi));
+    Vector worldWi = its.shFrame.toWorld(its.wi);
+
+    Vector xAxis = normalize(cross(normal, worldWi));
     Vector zAxis = normalize(cross(normal, xAxis));
 
     return Frame(xAxis, normal, zAxis);

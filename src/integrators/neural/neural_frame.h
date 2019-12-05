@@ -3,11 +3,12 @@
 
 #include <mitsuba/mitsuba.h>
 #include <mitsuba/core/frame.h>
+#include <mitsuba/render/shape.h>
 #include <mitsuba/core/vector.h>
 
 MTS_NAMESPACE_BEGIN
 
-Frame constructNeuralFrame(Vector normal, Vector wi);
+Frame constructNeuralFrame(const Vector &normal, const Intersection &its);
 
 MTS_NAMESPACE_END
 

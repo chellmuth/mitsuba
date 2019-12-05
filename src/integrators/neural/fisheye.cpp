@@ -241,7 +241,7 @@ public:
         //     if (flipNormal) {
         //         normal *= -1.f;
         //     }
-        //     Frame neuralFrame = constructNeuralFrame(normal, its.wi);
+        //     Frame neuralFrame = constructNeuralFrame(normal, its);
         //     PhotonBundle bundle(its.p, neuralFrame, 10, 10);
 
         //     for (size_t i = 0; i < resultCount; i++) {
@@ -303,7 +303,7 @@ public:
             normal *= -1.f;
         }
 
-        Frame neuralFrame = constructNeuralFrame(normal, rRec.its.wi);
+        Frame neuralFrame = constructNeuralFrame(normal, rRec.its);
 
         RadianceQueryRecord nestedRec(scene, sampler);
         for (int thetaStep = 0; thetaStep < thetaSteps; thetaStep++) {
