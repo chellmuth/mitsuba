@@ -48,8 +48,8 @@ void PhotonBundle::splat(const Photon &photon)
 
     if (theta >= M_PI / 2.f) { return; }
 
-    const int phiStep = (int)floorf(phi / (M_TWO_PI / m_phiSteps));
-    const int thetaStep = (int)floorf(theta / (M_PI / 2.f / m_thetaSteps));
+    const int phiStep = (int)floorf((phi / M_TWO_PI) * m_phiSteps);
+    const int thetaStep = (int)floorf((theta / (M_PI / 2.f)) * m_thetaSteps);
 
     assert(phiStep >= 0);
     assert(thetaStep >= 0);

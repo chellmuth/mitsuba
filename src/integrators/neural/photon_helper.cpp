@@ -29,9 +29,10 @@ void gatherPhotons(
     std::cout << "INTERSECTION RECORD:" << std::endl;
     std::cout << its.p.toString() << std::endl;
     // std::cout << its.geoFrame.n.toString() << std::endl;
-    // std::cout << its.shFrame.n.toString() << std::endl;
-    std::cout << its.toWorld(its.shFrame.n).toString() << std::endl;
-    std::cout << its.wi.toString() << " " << its.toWorld(its.wi).toString() << std::endl;
+    std::cout << "SH FRAME.N " << its.shFrame.n.toString() << std::endl;
+    std::cout << "TO WORLD SH FRAME.N " << its.toWorld(its.shFrame.n).toString() << std::endl;
+    std::cout << "TO LOCAL SH FRAME.N " << its.toLocal(its.shFrame.n).toString() << std::endl;
+    std::cout << "WI LOCAL: " << its.wi.toString() << " WI WORLD: " << its.toWorld(its.wi).toString() << std::endl;
 
     std::ostringstream oss;
     if (identifier < 0) {
@@ -50,9 +51,9 @@ void gatherPhotons(
         its.shFrame.n.x * (flipNormal ? -1.f : 1.f),
         its.shFrame.n.y * (flipNormal ? -1.f : 1.f),
         its.shFrame.n.z * (flipNormal ? -1.f : 1.f),
-        its.wi.x,
-        its.wi.y,
-        its.wi.z,
+        its.toWorld(its.wi).x,
+        its.toWorld(its.wi).y,
+        its.toWorld(its.wi).z,
     };
     fileStream->write(&intersectionBuffer, 9 * sizeof(float));
 

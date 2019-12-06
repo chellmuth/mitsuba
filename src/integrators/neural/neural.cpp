@@ -230,9 +230,9 @@ public:
                     its,
                     flippedNormal
                 );
-
             }
             std::cout << "Phi: " << phi << " " << "Theta: " << theta << std::endl;
+            testNeuralFrame(neuralFrame, its);
         }
 
         Vector localDirection = sphericalToCartesian(phi, theta);

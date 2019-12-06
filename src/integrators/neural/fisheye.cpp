@@ -305,6 +305,7 @@ public:
         }
 
         Frame neuralFrame = constructNeuralFrame(normal, rRec.its);
+        testNeuralFrame(neuralFrame, rRec.its);
 
         RadianceQueryRecord nestedRec(scene, sampler);
         for (int thetaStep = 0; thetaStep < thetaSteps; thetaStep++) {
