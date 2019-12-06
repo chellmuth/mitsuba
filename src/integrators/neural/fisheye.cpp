@@ -28,7 +28,7 @@ public:
         m_y = props.getInteger("y");
         m_pdfCount = props.getSize("pdfCount");
 
-        m_globalPhotons = props.getSize("globalPhotons", 10000);
+        m_globalPhotons = props.getSize("globalPhotons", 100000);
 
         Log(EInfo, "Fisheye constructor (%i, %i, %i)", m_x, m_y, m_pdfCount);
     }
@@ -344,7 +344,15 @@ public:
         film->setBitmap(bitmap);
         film->develop(scene, 0.f);
 
-        gatherPhotons(m_globalPhotonMap, m_x, m_y, rRec, flippedNormal, block, identifier);
+        gatherPhotons(
+            "photons",
+            m_globalPhotonMap,
+            m_x, m_y,
+            rRec.its,
+            flippedNormal,
+            block,
+            identifier
+        );
     }
 
     void renderBlock(

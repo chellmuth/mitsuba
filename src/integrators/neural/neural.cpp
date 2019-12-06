@@ -2,6 +2,7 @@
 #include "neural_pdf.h"
 #include "neural_util.h"
 #include "photon_bundle.h"
+#include "photon_helper.h"
 
 #include <mitsuba/render/scene.h>
 #include <mitsuba/render/renderproc.h>
@@ -62,7 +63,7 @@ public:
                 Log(EInfo, "Full render");
             }
 
-            m_globalPhotons = props.getSize("globalPhotons", 10000);
+            m_globalPhotons = props.getSize("globalPhotons", 100000);
         }
 
     /// Unserialize from a binary data stream
@@ -221,6 +222,15 @@ public:
                 ref<FileStream> fileStream = new FileStream(oss.str(), FileStream::ETruncWrite);
                 fileStream->write(photonBundle.data(), sizeof(float) * 100);
                 fileStream->close();
+
+                gatherPhotons(
+                    "neural",
+                    m_globalPhotonMap,
+                    m_x, m_y,
+                    its,
+                    flippedNormal
+                );
+
             }
             std::cout << "Phi: " << phi << " " << "Theta: " << theta << std::endl;
         }

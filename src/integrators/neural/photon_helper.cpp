@@ -8,9 +8,10 @@
 MTS_NAMESPACE_BEGIN
 
 void gatherPhotons(
+    const std::string &prefix,
     ref<PhotonMap> globalPhotonMap,
     int x, int y,
-    const RadianceQueryRecord &rRec,
+    const Intersection &its,
     bool flipNormal,
     const ImageBlock *block,
     const int identifier
@@ -18,26 +19,26 @@ void gatherPhotons(
     typedef PointKDTree<Photon>      PhotonTree;
     typedef PhotonTree::SearchResult SearchResult;
 
-    const Intersection &its = rRec.its;
-
-    const size_t maxPhotons = 100;
+    const size_t maxPhotons = 10;
     SearchResult *results = static_cast<SearchResult *>(
         alloca((maxPhotons + 1) * sizeof(SearchResult)));
 
     size_t resultCount = globalPhotonMap->nnSearch(its.p, maxPhotons, results);
     // Log(EInfo, "Photons returned: %i", resultCount);
 
-    // std::cout << "INTERSECTION RECORD:" << std::endl;
-    // std::cout << its.p.toString() << std::endl;
+    std::cout << "INTERSECTION RECORD:" << std::endl;
+    std::cout << its.p.toString() << std::endl;
     // std::cout << its.geoFrame.n.toString() << std::endl;
-    // std::cout << its.wi.toString() << std::endl;
+    // std::cout << its.shFrame.n.toString() << std::endl;
+    std::cout << its.toWorld(its.shFrame.n).toString() << std::endl;
+    std::cout << its.wi.toString() << " " << its.toWorld(its.wi).toString() << std::endl;
 
     std::ostringstream oss;
     if (identifier < 0) {
-        oss << "photons_" << x << "_" << y << ".bin";
+        oss << prefix << "_" << x << "_" << y << ".bin";
     } else {
         auto offset = Vector2i(block->getOffset());
-        oss << "results/photons_" << identifier << "-block_" << offset.x << "x" << offset.y << ".bin";
+        oss << "results/" << prefix << "_" << identifier << "-block_" << offset.x << "x" << offset.y << ".bin";
     }
 
     ref<FileStream> fileStream = new FileStream(oss.str(), FileStream::ETruncWrite);
