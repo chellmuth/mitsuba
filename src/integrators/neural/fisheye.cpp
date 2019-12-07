@@ -63,12 +63,14 @@ public:
         }
 
         if (m_globalPhotonMap.get() == NULL && m_globalPhotons > 0) {
+            std::cout << "MAX DEPTH " << m_maxDepth << std::endl;
+
             /* Generate the global photon map */
             ref<GatherPhotonProcess> proc = new GatherPhotonProcess(
                 GatherPhotonProcess::ESurfacePhotons,
                 m_globalPhotons, // count
                 0, // granularity for parallelization
-                m_maxDepth - 1,
+                m_maxDepth,
                 m_rrDepth,
                 true, // gather locally
                 true, // auto-cancel if not enough photons are generated

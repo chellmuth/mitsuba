@@ -113,7 +113,7 @@ std::vector<Float> NeuralPDF::batchEval(int size, std::vector<Float> photonBundl
     const int phiSteps = (int)sqrtf(count);
 
     for (int i = 0; i < count; i++) {
-        const int thetaStep = thetaSteps - (int)floorf(i / phiSteps) - 1;
+        const int thetaStep = (int)floorf(i / phiSteps);
         const int phiStep = i % phiSteps;
         const int sourceIndex = thetaStep * phiSteps + phiStep;
 
