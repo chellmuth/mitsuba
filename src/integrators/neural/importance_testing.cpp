@@ -119,7 +119,7 @@ public:
     ) const {
         const int thetaSteps = 400;
         const int phiSteps = 400;
-        const int spp = 1024;
+        const int spp = 128;
 
         Properties filmProps("HDRFilm");
         filmProps.setInteger("width", phiSteps);
@@ -176,13 +176,12 @@ public:
                     RayDifferential fisheyeRay(rRec.its.p, wo, sensorRay.time);
                     fisheyeRay.mint = Epsilon;
 
-                    BSDFSamplingRecord bRec(rRec.its, rRec.sampler, ERadiance);
+                    BSDFSamplingRecord bRec(rRec.its, rRec.its.toLocal(wo), ERadiance);
+
                     result += m_fisheyeIntegrator->Li(fisheyeRay, nestedRec)
-                        // * bsdf->eval(bRec, ESolidAngle)
+                        * bsdf->eval(bRec, ESolidAngle)
                         * sinf(theta)
-                        * (0.5f / M_PI)
                         * (2.f * M_PI) * (M_PI / 2.f) / (thetaSteps * phiSteps)
-                        * cosTheta
                         * (1.f / spp);
                 }
 
