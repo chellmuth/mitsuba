@@ -20,6 +20,12 @@ plugins += env.SharedLibrary('multichannel', ['misc/multichannel.cpp'])
 plugins += env.SharedLibrary('field', ['misc/field.cpp'])
 plugins += env.SharedLibrary('motion', ['misc/motion.cpp'])
 
+plugins += env.SharedLibrary('importance_testing', [
+    'neural/importance_testing.cpp',
+    'neural/neural_frame.cpp',
+    'neural/photon_bundle.cpp',
+    'neural/photon_helper.cpp'
+])
 plugins += env.SharedLibrary('fisheye', [
     'neural/fisheye.cpp',
     'neural/neural_frame.cpp',
