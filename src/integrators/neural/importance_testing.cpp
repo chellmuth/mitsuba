@@ -119,7 +119,7 @@ public:
     ) const {
         const int thetaSteps = 400;
         const int phiSteps = 400;
-        const int spp = 128;
+        const int spp = 1;
 
         Properties filmProps("HDRFilm");
         filmProps.setInteger("width", phiSteps);
@@ -181,13 +181,12 @@ public:
                     result += m_fisheyeIntegrator->Li(fisheyeRay, nestedRec)
                         * bsdf->eval(bRec, ESolidAngle)
                         * sinf(theta)
-                        * (2.f * M_PI) * (M_PI / 2.f) / (thetaSteps * phiSteps)
                         * (1.f / spp);
                 }
 
                 bitmap->setPixel({phiStep, thetaStep}, result);
 
-                L += result;
+                L += result * (2.f * M_PI) * (M_PI / 2.f) / (thetaSteps * phiSteps);
             }
         }
 
