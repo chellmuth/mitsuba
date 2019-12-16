@@ -277,7 +277,7 @@ public:
     ) const {
         const int thetaSteps = 400;
         const int phiSteps = 400;
-        const int spp = 32;
+        const int spp = 1;
 
         Properties filmProps("HDRFilm");
         filmProps.setInteger("width", phiSteps);
