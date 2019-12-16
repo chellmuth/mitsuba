@@ -178,6 +178,7 @@ public:
 
                     BSDFSamplingRecord bRec(rRec.its, rRec.its.toLocal(wo), ERadiance);
 
+                    // std::cout << bsdf->eval(bRec).toString() << std::endl;
                     result += m_fisheyeIntegrator->Li(fisheyeRay, nestedRec)
                         * bsdf->eval(bRec, ESolidAngle)
                         * sinf(theta)
@@ -219,6 +220,7 @@ public:
 
             sampler->generate(offset);
 
+            Spectrum testing(0.f);
             for (size_t j = 0; j < sampler->getSampleCount(); j++) {
                 if (offset.x == m_x && offset.y == m_y) {}
                 else { continue; }
@@ -240,26 +242,16 @@ public:
                 }
 
                 Spectrum result = spec * m_gtIntegrator->Li(sensorRay, rRec2);
+                testing += result / sampler->getSampleCount();
                 // std::cout << spec.toString() << " " << result.toString() << std::endl;
                 block->put(samplePos, result, rRec2.alpha);
                 sampler->advance();
             }
-        }
-
-        for (int i = 0; i < m_pdfCount; i++) {
-            rRec.newQuery(queryType, sensor->getMedium());
-            float sampleX = rRec.nextSample1D() * block->getWidth() + block->getOffset().x;
-            float sampleY = rRec.nextSample1D() * block->getHeight() + block->getOffset().y;
-
-            Point2 samplePos(sampleX, sampleY);
-            sensor->sampleRayDifferential(sensorRay, samplePos, apertureSample, timeSample);
-            sensorRay.scaleDifferential(diffScaleFactor);
-
-            rRec.rayIntersect(sensorRay);
-
-            if (rRec.its.isValid()) {
-                renderFisheye(scene, sensor, sampler, rRec, sensorRay, block, i);
+            if (offset.x == m_x && offset.y == m_y) {
+                std::cout << "CONVERGED?" << std::endl;
+                std::cout << testing.toString() << std::endl;
             }
+
         }
     }
 
