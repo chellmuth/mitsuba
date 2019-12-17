@@ -173,7 +173,7 @@ public:
 
             if (rRec.type & RadianceQueryRecord::EDirectSurfaceRadiance &&
                 (bsdf->getType() & BSDF::ESmooth) /*&& rRec.depth > 1*/) {
-                const int directSamples = 1000;
+                const int directSamples = 100;
                 for (int i = 0; i < directSamples; i++) {
                     Spectrum value = scene->sampleEmitterDirect(dRec, rRec.nextSample2D());
                     if (!value.isZero()) {

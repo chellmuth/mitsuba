@@ -353,32 +353,33 @@ public:
 
             if (rRec.type & RadianceQueryRecord::EDirectSurfaceRadiance &&
                 (bsdf->getType() & BSDF::ESmooth)/* && rRec.depth > 1*/) {
-                Spectrum value = scene->sampleEmitterDirect(dRec, rRec.nextSample2D());
-                if (!value.isZero()) {
-                    const Emitter *emitter = static_cast<const Emitter *>(dRec.object);
 
-                    /* Allocate a record for querying the BSDF */
-                    BSDFSamplingRecord bRec(its, its.toLocal(dRec.d), ERadiance);
+                const int directSamples = 100;
+                for (int i = 0; i < directSamples; i++) {
+                    Spectrum value = scene->sampleEmitterDirect(dRec, rRec.nextSample2D());
+                    if (!value.isZero()) {
+                        const Emitter *emitter = static_cast<const Emitter *>(dRec.object);
 
-                    /* Evaluate BSDF * cos(theta) */
-                    const Spectrum bsdfVal = bsdf->eval(bRec);
+                        /* Allocate a record for querying the BSDF */
+                        BSDFSamplingRecord bRec(its, its.toLocal(dRec.d), ERadiance);
 
-                    /* Prevent light leaks due to the use of shading normals */
-                    if (!bsdfVal.isZero() && (!m_strictNormals
-                            || dot(its.geoFrame.n, dRec.d) * Frame::cosTheta(bRec.wo) > 0)) {
+                        /* Evaluate BSDF * cos(theta) */
+                        const Spectrum bsdfVal = bsdf->eval(bRec);
 
-                        /* Calculate prob. of having generated that direction
-                           using BSDF sampling */
-                        // Float bsdfPdf = (emitter->isOnSurface() && dRec.measure == ESolidAngle)
-                        //     ? bsdf->pdf(bRec) : 0;
-                        Float bsdfPdf = (emitter->isOnSurface() && dRec.measure == ESolidAngle)
-                            ? neuralPdf(bRec) : 0;
+                        /* Prevent light leaks due to the use of shading normals */
+                        if (!bsdfVal.isZero() && (!m_strictNormals
+                                || dot(its.geoFrame.n, dRec.d) * Frame::cosTheta(bRec.wo) > 0)) {
 
-                        /* Weight using the power heuristic */
-                        Float weight = miWeight(dRec.pdf, bsdfPdf);
-                        Li += throughput * value * bsdfVal * weight;
+                            /* Calculate prob. of having generated that direction
+                               using BSDF sampling */
+                            Float bsdfPdf = (emitter->isOnSurface() && dRec.measure == ESolidAngle)
+                                ? bsdf->pdf(bRec) : 0;
 
-                        // std::cout << "EMITTER HIT!" << std::endl;
+                            /* Weight using the power heuristic */
+                            Float weight = miWeight(dRec.pdf, bsdfPdf);
+                            weight = 1.f;
+                            Li += throughput * value * bsdfVal * weight / directSamples;
+                        }
                     }
                 }
             }
@@ -488,7 +489,7 @@ public:
                    implemented direct illumination sampling technique */
                 const Float lumPdf = (!(bRec.sampledType & BSDF::EDelta)) ?
                     scene->pdfEmitterDirect(dRec) : 0;
-                Li += throughput * value * miWeight(bsdfPdf, lumPdf);
+                // Li += throughput * value * miWeight(bsdfPdf, lumPdf);
             }
 
             /* ==================================================================== */
