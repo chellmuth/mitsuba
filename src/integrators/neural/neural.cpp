@@ -17,6 +17,7 @@
 #include <mitsuba/render/photonmap.h>
 
 #include <cmath>
+#include <iostream>
 
 MTS_NAMESPACE_BEGIN
 
@@ -550,13 +551,20 @@ public:
         if (!sensor->getFilm()->hasAlpha()) /* Don't compute an alpha channel if we don't have to */
             queryType &= ~RadianceQueryRecord::EOpacity;
 
-        for (size_t i = 0; i<points.size(); ++i) {
+        const size_t spp = sampler->getSampleCount();
+        float samples[spp];
+
+        for (size_t i = 0; i< points.size(); ++i) {
             Point2i offset = Point2i(points[i]) + Vector2i(block->getOffset());
 
             bool debugPixel = false;
-            if (m_x == offset.x && m_y == offset.y) {
+            bool debugVariance = false;
+            if (m_x == offset.x && m_y == offset.y && spp == 1) {
                 debugPixel = true;
                 Log(EInfo, "Rendering Pixel (%i, %i)", m_x, m_y);
+            } else if (m_x == offset.x && m_y == offset.y && spp > 1) {
+                debugVariance = true;
+                std::cout << "SPP: " << spp << std::endl;
             } else if (m_x != -1 && m_y != -1) {
                 continue;
             }
@@ -566,7 +574,7 @@ public:
 
             sampler->generate(offset);
 
-            for (size_t j = 0; j<sampler->getSampleCount(); j++) {
+            for (size_t j = 0; j < spp; j++) {
                 rRec.newQuery(queryType, sensor->getMedium());
                 Point2 samplePos(Point2(offset) + Vector2(rRec.nextSample2D()));
 
@@ -580,9 +588,23 @@ public:
 
                 sensorRay.scaleDifferential(diffScaleFactor);
 
-                spec *= Li(sensorRay, rRec, debugPixel);
+                const Spectrum sampleLi = Li(sensorRay, rRec, debugPixel);
+                spec *= sampleLi;
                 block->put(samplePos, spec, rRec.alpha);
                 sampler->advance();
+
+                samples[j] = sampleLi.average();
+            }
+
+            if (debugVariance) {
+                std::ostringstream oss;
+                oss << "samples_" << m_x << "_" << m_y << ".bin";
+
+                ref<FileStream> fileStream = new FileStream(oss.str(), FileStream::ETruncWrite);
+                int sppBuffer[] = { (int)spp };
+                fileStream->write(sppBuffer, sizeof(int));
+                fileStream->write(samples, sizeof(float) * spp);
+                fileStream->close();
             }
         }
     }
