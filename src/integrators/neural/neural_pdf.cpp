@@ -117,8 +117,8 @@ std::vector<Float> NeuralPDF::batchEval(int size, std::vector<Float> photonBundl
         const int phiStep = i % phiSteps;
         const int sourceIndex = thetaStep * phiSteps + phiStep;
 
-        // const float theta = M_PI / 2.f * (thetaStep + 0.5f) / thetaSteps;
-        pdfs[i] = buffer[sourceIndex];// / sinf(theta) / (M_TWO_PI * M_PI / 2.f);
+        const float theta = (M_PI / 2.f) * (thetaStep + 0.5f) / thetaSteps;
+        pdfs[i] = buffer[sourceIndex] / sinf(theta) / (M_TWO_PI * M_PI / 2.f);
     }
 
     return pdfs;
