@@ -24,7 +24,8 @@ plugins += env.SharedLibrary('importance_testing', [
     'neural/importance_testing.cpp',
     'neural/neural_frame.cpp',
     'neural/photon_bundle.cpp',
-    'neural/photon_helper.cpp'
+    'neural/photon_helper.cpp',
+    'neural/fisheye_pdf.cpp'
 ])
 plugins += env.SharedLibrary('fisheye', [
     'neural/fisheye.cpp',
