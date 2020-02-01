@@ -355,7 +355,7 @@ public:
             if (rRec.type & RadianceQueryRecord::EDirectSurfaceRadiance &&
                 (bsdf->getType() & BSDF::ESmooth)/* && rRec.depth > 1*/) {
 
-                const int directSamples = 100;
+                const int directSamples = 1;
                 for (int i = 0; i < directSamples; i++) {
                     Spectrum value = scene->sampleEmitterDirect(dRec, rRec.nextSample2D());
                     if (!value.isZero()) {
@@ -374,11 +374,11 @@ public:
                             /* Calculate prob. of having generated that direction
                                using BSDF sampling */
                             Float bsdfPdf = (emitter->isOnSurface() && dRec.measure == ESolidAngle)
-                                ? bsdf->pdf(bRec) : 0;
+                                ? neuralPdf(bRec) : 0;
 
                             /* Weight using the power heuristic */
                             Float weight = miWeight(dRec.pdf, bsdfPdf);
-                            weight = 1.f;
+                            // weight = 1.f;
                             Li += throughput * value * bsdfVal * weight / directSamples;
                         }
                     }
@@ -490,7 +490,7 @@ public:
                    implemented direct illumination sampling technique */
                 const Float lumPdf = (!(bRec.sampledType & BSDF::EDelta)) ?
                     scene->pdfEmitterDirect(dRec) : 0;
-                // Li += throughput * value * miWeight(bsdfPdf, lumPdf);
+                Li += throughput * value * miWeight(bsdfPdf, lumPdf);
             }
 
             /* ==================================================================== */
